@@ -1,0 +1,4 @@
+"use strict";
+
+test('main', function () {});
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uL19fdGVzdHNfXy9pbmRleC5qcyJdLCJuYW1lcyI6WyJ0ZXN0Il0sIm1hcHBpbmdzIjoiOztBQUFBQSxJQUFJLENBQUMsTUFBRCxFQUFTLFlBQU0sQ0FFbEIsQ0FGRyxDQUFKIiwic291cmNlc0NvbnRlbnQiOlsidGVzdCgnbWFpbicsICgpID0+IHtcblxufSk7XG4iXX0=

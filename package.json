@@ -1,0 +1,55 @@
+{
+	"name": "ton-sdk-tools",
+	"version": "0.11.0",
+	"repository": "https://github.com/tonlabs/ton-sdk-tools.git",
+	"license": "MIT",
+	"scripts": {
+		"babel": "babel src --out-dir dist --source-maps inline",
+		"flow": "flow",
+		"test": "jest",
+		"tk": "node ./dist/index.js",
+		"npm install": "npm install"
+	},
+	"bin": {
+		"tk": "./dist/index.js"
+	},
+	"dependencies": {
+		"@babel/runtime": "^7.6.0"
+	},
+	"devDependencies": {
+		"@babel/cli": "^7.6.0",
+		"@babel/core": "^7.6.0",
+		"@babel/plugin-proposal-class-properties": "^7.5.5",
+		"@babel/plugin-proposal-decorators": "^7.6.0",
+		"@babel/plugin-proposal-do-expressions": "^7.6.0",
+		"@babel/plugin-proposal-export-default-from": "^7.5.2",
+		"@babel/plugin-proposal-export-namespace-from": "^7.5.2",
+		"@babel/plugin-proposal-function-bind": "^7.2.0",
+		"@babel/plugin-proposal-function-sent": "^7.5.0",
+		"@babel/plugin-proposal-json-strings": "^7.2.0",
+		"@babel/plugin-proposal-logical-assignment-operators": "^7.2.0",
+		"@babel/plugin-proposal-nullish-coalescing-operator": "^7.4.4",
+		"@babel/plugin-proposal-numeric-separator": "^7.2.0",
+		"@babel/plugin-proposal-optional-chaining": "^7.6.0",
+		"@babel/plugin-proposal-pipeline-operator": "^7.5.0",
+		"@babel/plugin-proposal-throw-expressions": "^7.2.0",
+		"@babel/plugin-syntax-bigint": "^7.4.4",
+		"@babel/plugin-syntax-dynamic-import": "^7.2.0",
+		"@babel/plugin-syntax-import-meta": "^7.2.0",
+		"@babel/plugin-transform-arrow-functions": "^7.2.0",
+		"@babel/plugin-transform-async-to-generator": "^7.5.0",
+		"@babel/plugin-transform-block-scoping": "^7.6.0",
+		"@babel/plugin-transform-classes": "^7.5.5",
+		"@babel/plugin-transform-runtime": "^7.6.0",
+		"@babel/preset-env": "^7.6.0",
+		"@babel/preset-flow": "^7.0.0",
+		"@babel/runtime": "^7.6.0",
+		"babel-eslint": "^10.0.3",
+		"eslint": "^6.3.0",
+		"eslint-plugin-import": "^2.18.2",
+		"eslint-plugin-jsx-a11y": "^6.2.3",
+		"flow": "^0.2.3",
+		"jest": "^24.9.0",
+		"pre-commit": "^1.2.2"
+	}
+}
