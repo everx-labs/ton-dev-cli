@@ -4,8 +4,8 @@ const fs = require('fs');
 
 async function checkRequiredSoftware() {
     const version = await docker.version();
-    if (version < 19_000_000) {
-        throw "Docker version required ^19";
+    if (version < 17_000_000) {
+        throw "Docker version required ^17";
     }
 }
 
