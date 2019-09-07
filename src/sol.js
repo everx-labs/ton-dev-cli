@@ -17,12 +17,19 @@ async function sol(args) {
         job.push(
             `solc ${file}.sol --tvm > ${file}.code`,
             `solc ${file}.sol --tvm_abi > ${file}.abi.json`,
-            `tvm_linker compile ${file}.code --lib /usr/bin/stdlib_sol.tvm --abi-json ${file}.abi.json`
+            `tvm_linker compile ${file}.code --lib /usr/bin/stdlib_sol.tvm --abi-json ${file}.abi.json > ${file}.result`
         );
     });
     fs.writeFileSync(compiler.hostPath('job.sh'), job.join('\n'));
-    console.log(await compiler.run('sh', './job.sh'));
-    // console.log('sol', args);
+    await compiler.run('sh', './job.sh');
+    options.files.forEach((file) => {
+        fs.copyFileSync(rootPath(`${file}.sol`), compiler.hostPath(`${file}.sol`));
+        job.push(
+            `solc ${file}.sol --tvm > ${file}.code`,
+            `solc ${file}.sol --tvm_abi > ${file}.abi.json`,
+            `tvm_linker compile ${file}.code --lib /usr/bin/stdlib_sol.tvm --abi-json ${file}.abi.json > ${file}.result`
+        );
+    });
 }
 
 export { sol };
