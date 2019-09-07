@@ -85,9 +85,9 @@ function findOptionName(arg, types) {
         }
         return optionName;
     }
-    if (arg.startsWith('_')) {
+    if (arg.startsWith('-')) {
         const name = arg.substr(1);
-        const optionEntry = Object.entries(types).find(x => `${x[1].short || ''}`.toLowerCase() === name.toLowerCase());
+        const optionEntry = Object.entries(types).find(([_, type]) => `${type.short || ''}`.toLowerCase() === name.toLowerCase());
         if (!optionEntry) {
             throw `Invalid option: ${arg}`;
         }
@@ -118,7 +118,7 @@ function argsToOptions(args, types) {
             }
             pendingOption = null;
         } else {
-            const optionName = findOptionName(arg);
+            const optionName = findOptionName(arg, types);
             if (optionName) {
                 const type = types[optionName];
                 if ((type.valueCount || 0) > 0) {

@@ -7,6 +7,20 @@ const solArgs = {
     rust: { def: false, short: 'rs' },
 };
 
+function genJavaScriptPackage(file) {
+    const imageBase64 = fs.readFileSync(rootPath(`${file}.tvc`)).toString('base64');
+    const abi = fs.readFileSync(rootPath(`${file}.abi.json`)).toString().trimEnd();
+    const js =
+`const ${file}Package = {
+    abi: ${abi},
+    imageBase64: '${imageBase64}'
+};
+
+export default ${file}Package;
+`;
+    fs.writeFileSync(rootPath(`${file}Package.js`), js, { encoding: 'utf8' });
+}
+
 async function sol(args) {
     const options = argsToOptions(args, solArgs);
 
@@ -24,7 +38,12 @@ async function sol(args) {
     await compiler.run('sh', './job.sh');
     options.files.forEach((file) => {
         const linkerResult = fs.readFileSync(compiler.hostPath(`${file}.result`), { encoding: 'utf8'});
-        console.log('>>>', linkerResult);
+        const tvcFile = /Saved contract to file\s*(.*\.tvc)/gi.exec(linkerResult)[1];
+        fs.copyFileSync(compiler.hostPath(tvcFile), rootPath(`${file}.tvc`));
+        fs.copyFileSync(compiler.hostPath(`${file}.abi.json`), rootPath(`${file}.abi.json`));
+        if (options.javaScript) {
+            genJavaScriptPackage(file);
+        }
     });
 }
 
