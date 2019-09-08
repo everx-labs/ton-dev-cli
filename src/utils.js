@@ -6,7 +6,7 @@ const version = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json
 const root = process.cwd();
 
 function showUsage(usage) {
-    console.log(`TON Labs SDK Tools ${version}`);
+    console.log(`TON Labs Dev Tools ${version}`);
     console.log(usage);
 }
 

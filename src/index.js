@@ -4,7 +4,7 @@ import { showUsage } from './utils';
 import { setup } from './setup';
 import { sol } from './sol';
 
-const usage = `Use: tk command { argument ... }
+const usage = `Use: tondev command { argument ... }
 command:
     setup - looking for a required prerequisites and setup required TON Labs tools
     sol - compile TON contracts from solidity source code

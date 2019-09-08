@@ -16,7 +16,7 @@ function genJavaScriptPackage(file) {
     imageBase64: '${imageBase64}'
 };
 
-export default ${file}Package;
+module.exports = ${file}Package;
 `;
     fs.writeFileSync(rootPath(`${file}Package.js`), js, { encoding: 'utf8' });
 }

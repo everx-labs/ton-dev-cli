@@ -1,17 +1,17 @@
 {
-	"name": "ton-sdk-tools",
+	"name": "ton-dev-tools",
 	"version": "0.11.0",
-	"repository": "https://github.com/tonlabs/ton-sdk-tools.git",
+	"repository": "https://github.com/tonlabs/ton-dev-tools.git",
 	"license": "MIT",
 	"scripts": {
 		"babel": "babel src --out-dir dist --source-maps inline",
 		"flow": "flow",
 		"test": "jest",
-		"tk": "node ./dist/index.js",
+		"tondev": "node ./dist/index.js",
 		"npm install": "npm install"
 	},
 	"bin": {
-		"tk": "./dist/index.js"
+		"tondev": "./dist/index.js"
 	},
 	"dependencies": {
 		"@babel/runtime": "^7.6.0"

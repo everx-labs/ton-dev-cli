@@ -43,7 +43,7 @@ async function startStoppedContainers() {
         console.log(`Container [${config.compilerKit.container}] have been started.`);
     }
     if (!containers.localNode.State.Running) {
-        await docker.start(containers.compilerKit.Id);
+        await docker.start(containers.localNode.Id);
         console.log(`Container [${config.localNode.container}] have been started.`);
     }
 }
