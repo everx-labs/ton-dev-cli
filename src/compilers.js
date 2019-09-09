@@ -42,10 +42,12 @@ async function create(options?: CreateCompilerOptions) {
         return path.join(projectHostPath, ...items);
     }
 
+    const workingDir = `${config.mountDestination}/${project}`;
+
     async function run(...args: string[]) {
         return new Promise((resolve, reject) => {
             container.exec({
-                WorkingDir: `${config.mountDestination}/${project}`,
+                WorkingDir: workingDir,
                 Cmd: args,
                 Tty: true,
                 AttachStdin: true,
@@ -84,6 +86,7 @@ async function create(options?: CreateCompilerOptions) {
     }
 
     return {
+        workingDir,
         hostPath,
         run
     }

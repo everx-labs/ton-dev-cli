@@ -40,7 +40,9 @@ async function sol(args: string[]) {
     const options = argsToOptions(args, solArgs);
 
     const compiler = await compilers.create();
-    const job = [];
+    const job = [
+        `cd ${compiler.workingDir}`
+    ];
     options.files.forEach((file) => {
         fs.copyFileSync(rootPath(`${file}.sol`), compiler.hostPath(`${file}.sol`));
         job.push(
