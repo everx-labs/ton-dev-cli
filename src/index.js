@@ -18,6 +18,7 @@
 
 import { showUsage } from './utils';
 import { setup } from './setup';
+import { start } from './start';
 import { clean } from './clean';
 import { sol } from './sol';
 
@@ -31,6 +32,7 @@ command:
 async function main() {
     const commands = {
         setup,
+        start,
         clean,
         sol,
     };

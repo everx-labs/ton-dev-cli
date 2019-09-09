@@ -15,7 +15,6 @@
  */
 // @flow
 import type {
-    DContainer,
     DCreateContainerOptions,
     DContainerInfo,
 } from "./docker";
@@ -24,6 +23,7 @@ import docker from "./docker";
 import config from './config';
 
 const fs = require('fs');
+const path = require('path');
 
 async function checkRequiredSoftware() {
     const version = await docker.numericVersion();
@@ -74,6 +74,51 @@ async function createLocalNodeContainer(): Promise<void> {
     });
 }
 
+function breakWords(s: string): string {
+    const words = s.split(' ');
+    let result = '';
+    let line = '';
+    words.forEach((w) => {
+        if (line.length + w.length > 80) {
+            if (result !== '') {
+                result += '\n';
+            }
+            result += line;
+            line = '';
+        }
+        if (line !== '') {
+            line += ' ';
+        }
+        line += w;
+    });
+    if (line !== '') {
+        if (result !== '') {
+            result += '\n';
+        }
+        result += line;
+    }
+    return result;
+}
+
+async function showLicense() {
+    const license = fs
+        .readFileSync(path.join(__dirname, '..', 'LICENSE'))
+        .toString()
+        .split('\n')
+        .map(breakWords).join('\n');
+    console.log(license);
+//     console.log(
+// `
+//
+// Please read the license agreement above.
+// If you are agreed with conditions input YES and press Enter.
+// `);
+    // const answer = process.stdin.read();
+    // if (answer !== 'YES') {
+    //     process.exit(0);
+    // }
+}
+
 async function ensureStartedContainer(
     container: string,
     image: string,
@@ -116,6 +161,7 @@ async function ensureStartedCompilers(): Promise<DContainerInfo> {
 }
 
 async function setup() {
+    await showLicense();
     await checkRequiredSoftware();
     await ensureStartedLocalNode();
     await ensureStartedCompilers();
