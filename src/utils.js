@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018-2019 TON DEV SOLUTIONS LTD.
+ *
+ * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at:
+ *
+ * http://www.ton.dev/licenses
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific TON DEV software governing permissions and
+ * limitations under the License.
+ */
+// @flow
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
@@ -5,7 +21,7 @@ const { spawn } = require('child_process');
 const version = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json')).toString()).version;
 const root = process.cwd();
 
-function showUsage(usage) {
+function showUsage(usage: string) {
     console.log(`TON Labs Dev Tools ${version}`);
     console.log(usage);
 }
@@ -14,7 +30,7 @@ const spawnEnv = {
     ...process.env,
 };
 
-function run(name, ...args) {
+function run(name: string, ...args: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
         try {
             const spawned = spawn(name, args, { env: spawnEnv });
@@ -46,7 +62,7 @@ function run(name, ...args) {
     });
 }
 
-function versionToNumber(s) {
+function versionToNumber(s: string): number {
     const parts = `${s || ''}`.split('.').map(x => Number.parseInt(x)).slice(0, 3);
     while (parts.length < 3) {
         parts.push(0);
@@ -54,7 +70,7 @@ function versionToNumber(s) {
     return parts[0] * 1000000 + parts[1] * 1000 + parts[2];
 }
 
-function forceRmDir(dir) {
+function forceRmDir(dir: string) {
     fs.readdirSync(dir).forEach((item) => {
         const itemPath = path.join(dir, item);
         const stat = fs.statSync(itemPath);
@@ -69,14 +85,25 @@ function forceRmDir(dir) {
     fs.rmdirSync(dir);
 }
 
-function ensureCleanDirectory(path) {
+function ensureCleanDirectory(path: string) {
     if (fs.existsSync(path)) {
         forceRmDir(path);
     }
-    fs.mkdirSync(path, { recursive: true });
+    fs.mkdirSync(path, ({ recursive: true }: any));
 }
 
-function findOptionName(arg, types) {
+
+export type ArgType = {
+    def: any,
+    short?: string,
+    valueCount?: number,
+}
+
+export type ArgTypes = {
+    [string]: ArgType
+}
+
+function findOptionName(arg: string, types: ArgTypes) {
     if (arg.startsWith('--')) {
         const name = arg.substr(2);
         const optionName = Object.keys(types).find(x => x.toLowerCase() === name.toLowerCase());
@@ -87,7 +114,10 @@ function findOptionName(arg, types) {
     }
     if (arg.startsWith('-')) {
         const name = arg.substr(1);
-        const optionEntry = Object.entries(types).find(([_, type]) => `${type.short || ''}`.toLowerCase() === name.toLowerCase());
+        const optionEntry = Object.entries(types).find(([_, _type]) => {
+            const type: ArgType = (_type: any);
+            return `${type.short || ''}`.toLowerCase() === name.toLowerCase();
+        });
         if (!optionEntry) {
             throw `Invalid option: ${arg}`;
         }
@@ -96,11 +126,13 @@ function findOptionName(arg, types) {
     return null;
 }
 
-function argsToOptions(args, types) {
+
+function argsToOptions(args: string[], types: { [string]: ArgType }): any {
     const options = {
         files: [],
     };
-    Object.entries(types).forEach(([name, type]) => {
+    Object.entries(types).forEach(([name, _type]) => {
+        const type: ArgType = (_type: any);
         if ((type.valueCount || 0) > 1) {
             options[name] = [];
         } else {
@@ -134,7 +166,7 @@ function argsToOptions(args, types) {
     return options;
 }
 
-function rootPath(...items) {
+function rootPath(...items: string[]) {
     return path.join(root, ...items);
 }
 

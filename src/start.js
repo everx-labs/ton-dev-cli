@@ -15,29 +15,10 @@
  */
 // @flow
 
-const path = require('path');
-const os = require('os');
+import { ensureStartedLocalNode } from "./setup";
 
-const config = {
-    auth: {
-        authconfig: {
-            username: process.env.TONDEV_DH_USER,
-            password: process.env.TONDEV_DH_PASSWORD,
-        }
-    },
-    localNode: {
-        image: 'tonlabs/local-node:0.11.0',
-        container: 'tonlabs-local-node',
-    },
-    compilers: {
-        image: 'tonlabs/compiler-kit:0.11.0',
-        container: 'tonlabs-compiler-kit',
-        mountSource: path.join(os.homedir(), '.tonlabs', 'compiler-kit', 'projects'),
-        mountDestination: '/projects',
+async function start() {
+    return ensureStartedLocalNode();
+}
 
-    }
-};
-
-export default config;
-
-
+export {start};

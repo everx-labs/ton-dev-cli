@@ -14,6 +14,7 @@
 		"tondev": "./dist/index.js"
 	},
 	"dependencies": {
+		"dockerode": "^2.5.8",
 		"@babel/runtime": "^7.6.0"
 	},
 	"devDependencies": {

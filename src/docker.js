@@ -1,67 +1,175 @@
+/*
+ * Copyright 2018-2019 TON DEV SOLUTIONS LTD.
+ *
+ * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at:
+ *
+ * http://www.ton.dev/licenses
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific TON DEV software governing permissions and
+ * limitations under the License.
+ */
+// @flow
 import config from "./config";
-import { run, versionToNumber } from "./utils";
+import Docker from 'dockerode';
 
-async function docker(...args) {
-    return run('docker', ...args);
+import { versionToNumber } from "./utils";
+
+const docker = new Docker();
+
+export type DImageInfo = {
+    Id: string,
+    RepoTags: string[],
 }
 
-async function version() {
-    return versionToNumber(/version\s+([0-9.]+)/gi.exec(await docker('-v'))[1]);
+export type DContainerInfo = {
+    Id: string,
+    Names: string[],
+    Image: string,
+    ImageID: string,
+    State: string,
 }
 
-async function getContainers() {
-    return (await docker('ps', '-a', '--format', '{{.ID}}\t{{.Image}}\t{{.Status}}\t{{.Names}}'))
-        .split('\n')
-        .map(x => `${x}`.trim().split('\t'))
-        .filter(x => x.length === 4)
-        .map(x => ({
-            id: x[0],
-            image: x[1],
-            status: x[2],
-            stopped: x[2].toLowerCase().startsWith('exited'),
-            names: x[3],
-        }));
+export type DContainerExecOptions = {
+    AttachStdin?: boolean,
+    AttachStdout?: boolean,
+    AttachStderr?: boolean,
+    DetachKeys?: string,
+    Tty?: boolean,
+    Env?: string,
+    Cmd?: string[],
+    Privileged?: boolean,
+    User?: string,
+    WorkingDir?: string,
 }
 
-async function start(id) {
-    return docker('start', id);
+export type DContainer = {
+    modem: any,
+    start(): Promise<void>,
+    exec(options: DContainerExecOptions, callback: any): void,
+    stop(): Promise<void>,
+    remove(): Promise<void>,
 }
 
-async function exec(id, workingDirectory, ...args) {
-    return docker('exec', '-u', 'root', '-w', workingDirectory, id, ...args);
+export type DImage = {
+    remove(): Promise<void>,
 }
 
-async function inspectVolume(id) {
-    return JSON.parse(await docker('volume', 'inspect', id));
+export type DMount = {
+    Target: string,
+    Source: string,
+    Type: 'bind' | 'volume' | 'tmpfs',
 }
 
-async function createVolume(id) {
-    return docker('volume', 'create', id);
-}
-
-async function inspectedOrNull(containers, name) {
-    const existing = containers.find(x => x.names === name);
-    if (!existing) {
-        return null;
+export type DCreateContainerOptions = {
+    name?: string,
+    Image: string,
+    Interactive?: boolean,
+    Tty?: boolean,
+    User?: string,
+    Entrypoint?: string[],
+    HostConfig?: {
+        Mounts?: DMount[],
+    },
+    ExposedPorts?: {
+        [string]: {}
+    },
+    HostConfig?: {
+        PortBindings?: {
+            [string]: { HostIp: string, HostPort: string }[]
+        }
     }
-    return JSON.parse(await docker('container', 'inspect', existing.id))[0] || null;
 }
 
-async function findContainers() {
-    const containers = await getContainers();
-    return {
-        compilerKit: await inspectedOrNull(containers, config.compilerKit.container),
-        localNode: await inspectedOrNull(containers, config.localNode.container)
-    };
+export type DVersion = {
+    Version: string,
+}
+
+async function numericVersion() {
+    const version: DVersion = await docker.version();
+    return versionToNumber(version.Version);
+}
+
+async function listAllContainers(): Promise<DContainerInfo[]> {
+    return docker.listContainers({ all: true });
+}
+
+async function listAllImages(): Promise<DImageInfo[]> {
+    return docker.listImages({ all: true });
+}
+
+function getContainer(id: string): DContainer {
+    return docker.getContainer(id);
+}
+
+function getImage(name: string): DImage {
+    return docker.getImage(name);
+}
+
+async function createContainer(options: DCreateContainerOptions): Promise<DContainer> {
+    return docker.createContainer(options);
+}
+
+async function pullImage(repoTag: string): Promise<DImage> {
+    return new Promise((resolve, reject) => {
+        docker.pull(repoTag, config.auth, function (err, stream) {
+            if (!stream) {
+                reject(err);
+                return;
+            }
+            let lastReportTime = Date.now();
+            docker.modem.followProgress(stream, onFinished, onProgress);
+
+            function onFinished(err, output) {
+                resolve(output);
+            }
+
+            function onProgress(event) {
+                const isTimeToReport = Date.now() > lastReportTime + 1000;
+                if (isTimeToReport) {
+                    lastReportTime = Date.now();
+                    process.stdout.write('.');
+                }
+            }
+        });
+
+    })
+}
+
+function hasName(container: DContainerInfo, name: string): boolean {
+    const nameToFind = `/${name}`.toLowerCase();
+    return !!(container.Names || []).find(n => n.toLowerCase() === nameToFind);
+}
+
+function imageHasRepoTag(info: DImageInfo, tag: string): boolean {
+    return !!(info.RepoTags || []).find(n => n.toLowerCase() === tag.toLowerCase());
+}
+
+function findContainerInfo(containers: DContainerInfo[], name: string): ?DContainerInfo {
+    return containers.find(x => hasName(x, name));
+}
+
+function findImageInfo(images: DImageInfo[], name: string): ?DImageInfo {
+    return images.find(x => imageHasRepoTag(x, name));
+}
+
+function isRunning(info: ?DContainerInfo): boolean {
+    return !!info && info.State.toLowerCase() === 'running';
 }
 
 export default {
-    version,
-    containers: getContainers,
-    start,
-    exec,
-    inspectVolume,
-    createVolume,
-    run: docker,
-    findContainers,
+    numericVersion,
+    createContainer,
+    getContainer,
+    isRunning,
+    listAllContainers,
+    listAllImages,
+    getImage,
+    pullImage,
+    findContainerInfo,
+    findImageInfo,
 }
