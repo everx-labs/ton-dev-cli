@@ -52,7 +52,7 @@ async function sol(args: string[]) {
         );
     });
     fs.writeFileSync(compiler.hostPath('job.sh'), job.join('\n'));
-    await compiler.run('sh', './job.sh');
+    await compiler.run('sh', `${compiler.workingDir}/job.sh`);
     options.files.forEach((file) => {
         const linkerResult = fs.readFileSync(compiler.hostPath(`${file}.result`), { encoding: 'utf8'});
         const tvcFile = (/Saved contract to file\s*(.*\.tvc)/gi.exec(linkerResult) || [])[1];
