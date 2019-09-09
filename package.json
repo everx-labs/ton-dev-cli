@@ -1,7 +1,7 @@
 {
-	"name": "ton-dev-tools",
+	"name": "ton-dev-cli",
 	"version": "0.11.0",
-	"repository": "https://github.com/tonlabs/ton-dev-tools.git",
+	"repository": "https://github.com/tonlabs/ton-dev-cli.git",
 	"license": "MIT",
 	"scripts": {
 		"babel": "babel src --out-dir dist --source-maps inline",
