@@ -70,6 +70,7 @@ async function createCompilersContainer(): Promise<void> {
         Tty: true,
         User: 'root',
         Entrypoint: ['/bin/bash'],
+        Env: ['USER_AGREEMENT=yes'],
         HostConfig: {
             Mounts: [{
                 Type: 'bind',
@@ -85,6 +86,7 @@ async function createLocalNodeContainer(): Promise<void> {
         name: config.localNode.container,
         interactive: true,
         Image: config.localNode.image,
+        Env: ['USER_AGREEMENT=yes'],
         HostConfig: {
             PortBindings: {
                 '80/tcp': [
@@ -103,6 +105,7 @@ async function ensureStartedContainer(
     let containerInfo = docker.findContainerInfo(await docker.listAllContainers(), container);
     if (!containerInfo) {
         if (!docker.findImageInfo(await docker.listAllImages(), image)) {
+            await checkLicenseAgreement();
             process.stdout.write(`Image [${image}] is missing. Pulling (please wait)...`);
             await docker.pullImage(image);
             console.log(' Done.');
@@ -137,7 +140,6 @@ async function ensureStartedCompilers(): Promise<DContainerInfo> {
 }
 
 async function setup() {
-    await checkLicenseAgreement();
     await checkRequiredSoftware();
     await ensureStartedLocalNode();
     await ensureStartedCompilers();

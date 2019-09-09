@@ -71,6 +71,7 @@ export type DCreateContainerOptions = {
     Tty?: boolean,
     User?: string,
     Entrypoint?: string[],
+    Env: string[],
     HostConfig?: {
         Mounts?: DMount[],
     },
