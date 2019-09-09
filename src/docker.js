@@ -3,15 +3,14 @@
  *
  * Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
  * this file except in compliance with the License.  You may obtain a copy of the
- * License at:
- *
- * http://www.ton.dev/licenses
+ * License at: https://www.ton.dev/licenses
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific TON DEV software governing permissions and
  * limitations under the License.
+ *
  */
 // @flow
 import config from "./config";
@@ -161,6 +160,28 @@ function isRunning(info: ?DContainerInfo): boolean {
     return !!info && info.State.toLowerCase() === 'running';
 }
 
+function containerBelongsToImage(info: DContainerInfo, image: string): boolean {
+    return info.Image.toLowerCase() === image.toLowerCase();
+}
+
+function isTonDevContainer(info: DContainerInfo): boolean {
+    return containerBelongsToImage(info, config.localNode.image)
+        || containerBelongsToImage(info, config.compilers.image);
+}
+
+function isTonDevImage(info: DImageInfo): boolean {
+    return imageHasRepoTag(info, config.localNode.image)
+        || imageHasRepoTag(info, config.compilers.image);
+}
+
+async function listTonDevContainers(): Promise<DContainerInfo[]> {
+    return (await listAllContainers()).filter(isTonDevContainer);
+}
+
+async function listTonDevImages(): Promise<DImageInfo[]> {
+    return (await listAllImages()).filter(isTonDevImage);
+}
+
 export default {
     numericVersion,
     createContainer,
@@ -172,4 +193,6 @@ export default {
     pullImage,
     findContainerInfo,
     findImageInfo,
+    listTonDevImages,
+    listTonDevContainers,
 }
