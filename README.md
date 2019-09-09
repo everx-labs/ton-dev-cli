@@ -32,6 +32,8 @@ tondev start
 tondev sol <file-name-without-extention> [ -js ]
 ```
 
+---
+
 Copyright 2018-2019 TON DEV SOLUTIONS LTD.
 
 Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
