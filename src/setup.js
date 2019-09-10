@@ -69,7 +69,6 @@ async function createCompilersContainer(): Promise<void> {
         Image: config.compilers.image,
         Tty: true,
         User: 'root',
-        Entrypoint: ['/bin/bash'],
         Env: ['USER_AGREEMENT=yes'],
         HostConfig: {
             Mounts: [{

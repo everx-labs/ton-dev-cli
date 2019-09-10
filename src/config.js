@@ -26,13 +26,12 @@ const config = {
     },
     localNode: {
         image: 'tonlabs/local-node:0.11.0',
-        // image: 'tonlabs/startup-edition-node:tos-feature-license-b7.b8e32c0a1053d7a0a746deeac06a157be09ef59b',
         container: 'tonlabs-local-node',
     },
     compilers: {
-        image: 'tonlabs/compiler-kit:0.11.0',
+        image: 'tonlabs/compilers:0.11.0',
         container: 'tonlabs-compiler-kit',
-        mountSource: path.join(os.homedir(), '.tonlabs', 'compiler-kit', 'projects'),
+        mountSource: path.join(os.homedir(), '.tonlabs', 'compilers', 'projects'),
         mountDestination: '/projects',
 
     }
