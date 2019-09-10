@@ -47,7 +47,7 @@ async function create(options?: CreateCompilerOptions) {
 
     async function containerRun(...args: string[]) {
         if (os.platform() === 'win32') {
-            return run('docker', 'exec', containerInfo.Id, ...args);
+            return run('docker', 'exec', containerInfo.Id, 'sh', ...args);
         }
         return new Promise((resolve, reject) => {
             container.exec({
