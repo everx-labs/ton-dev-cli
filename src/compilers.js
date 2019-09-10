@@ -14,11 +14,12 @@
  */
 // @flow
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 import docker from "./docker";
 import rootConfig from "./config";
 import { ensureStartedCompilers } from "./setup";
-import { ensureCleanDirectory } from "./utils";
+import { ensureCleanDirectory, run } from "./utils";
 
 const config = rootConfig.compilers;
 export type CreateCompilerOptions = {
@@ -44,7 +45,10 @@ async function create(options?: CreateCompilerOptions) {
 
     const workingDir = `${config.mountDestination}/${project}`;
 
-    async function run(...args: string[]) {
+    async function containerRun(...args: string[]) {
+        if (os.platform() === 'win32') {
+            return run('docker', 'exec', containerInfo.Id, ...args);
+        }
         return new Promise((resolve, reject) => {
             container.exec({
                 Cmd: args,
@@ -87,7 +91,7 @@ async function create(options?: CreateCompilerOptions) {
     return {
         workingDir,
         hostPath,
-        run
+        run: containerRun,
     }
 }
 export default {

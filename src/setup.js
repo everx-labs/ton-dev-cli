@@ -33,7 +33,7 @@ async function checkRequiredSoftware() {
 }
 
 async function checkLicenseAgreement() {
-    if ((await docker.listTonDevImages()).length > 0) {
+    if ((await docker.listTonDevContainers()).length > 0) {
         return;
     }
     const license = fs
@@ -42,13 +42,13 @@ async function checkLicenseAgreement() {
         .split('\n')
         .map(breakWords).join('\n');
     console.log(license);
-    console.log(
+    process.stdout.write(
         `
-
-If you agree input YES and press Enter.
-`);
-    const answer = await inputLine();
-    if (answer !== 'YES') {
+This Agreement takes effect when you input a “YES” and press Enter 
+or, if earlier, when you use any of the TON DEV Software: `);
+    const answer = (await inputLine()).trim().toLowerCase();
+    if (answer !== 'yes') {
+        console.log('\n\nLicense terms were not accepted.\n', );
         process.exit(0);
     }
 }
@@ -102,8 +102,8 @@ async function ensureStartedContainer(
 ): Promise<DContainerInfo> {
     let containerInfo = docker.findContainerInfo(await docker.listAllContainers(), container);
     if (!containerInfo) {
+        await checkLicenseAgreement();
         if (!docker.findImageInfo(await docker.listAllImages(), image)) {
-            await checkLicenseAgreement();
             process.stdout.write(`Image [${image}] is missing. Pulling (please wait)...`);
             await docker.pullImage(image);
             console.log(' Done.');
