@@ -1,23 +1,29 @@
 {
 	"name": "ton-dev-cli",
-	"version": "0.11.2",
-	"keywords": ["TON", "Javascript", "API", "Client"],
+	"version": "0.11.3",
+	"keywords": [
+		"TON",
+		"Javascript",
+		"API",
+		"Client"
+	],
 	"author": "TON DEV SOLUTIONS LTD.",
 	"license": "SEE LICENSE IN LICENSE",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/tonlabs/ton-dev-cli.git"
-	  },
+	},
 	"homepage": "https://ton.dev/node-se",
 	"scripts": {
 		"babel": "babel src --out-dir dist --source-maps inline",
 		"flow": "flow",
 		"test": "jest",
-		"tondev": "node ./dist/index.js",
+		"tondo": "node ./dist/index.js",
 		"npm install": "npm install"
 	},
 	"bin": {
-		"tondev": "./dist/index.js"
+		"tondev": "./dist/index.js",
+		"tondo": "./dist/index.js"
 	},
 	"dependencies": {
 		"dockerode": "^2.5.8",
