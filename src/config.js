@@ -30,7 +30,7 @@ const config = {
     },
     compilers: {
         image: 'tonlabs/compilers:0.11.0',
-        container: 'tonlabs-compiler-kit',
+        container: 'tonlabs-compilers',
         mountSource: path.join(os.homedir(), '.tonlabs', 'compilers', 'projects'),
         mountDestination: '/projects',
 

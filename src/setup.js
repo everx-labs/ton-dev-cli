@@ -68,7 +68,6 @@ async function createCompilersContainer(): Promise<void> {
         interactive: true,
         Image: config.compilers.image,
         Tty: true,
-        User: 'root',
         Env: ['USER_AGREEMENT=yes'],
         HostConfig: {
             Mounts: [{
