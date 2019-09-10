@@ -29,7 +29,7 @@ export type CreateCompilerOptions = {
 async function create(options?: CreateCompilerOptions) {
     const keepContent = options && options.keepContent || false;
     const containerInfo = await ensureStartedCompilers();
-    const project = process.cwd().replace(/[\\/\:]/g, '_');
+    const project = process.cwd().replace(/[\\/:]/g, '_');
     const projectHostPath = `${config.mountSource}/${project}`;
 
     if (keepContent) {
@@ -47,7 +47,7 @@ async function create(options?: CreateCompilerOptions) {
 
     async function containerRun(...args: string[]) {
         if (os.platform() === 'win32') {
-            return run('docker', 'exec', containerInfo.Id, 'sh', ...args);
+            return run('docker', 'exec', containerInfo.Id, ...args);
         }
         return new Promise((resolve, reject) => {
             container.exec({
