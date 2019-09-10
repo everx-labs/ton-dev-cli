@@ -29,7 +29,7 @@ export type CreateCompilerOptions = {
 async function create(options?: CreateCompilerOptions) {
     const keepContent = options && options.keepContent || false;
     const containerInfo = await ensureStartedCompilers();
-    const project = process.cwd().split(path.delimiter).map(x => x.split(path.sep).join('_')).join('_');
+    const project = process.cwd().replace(/[\\/\:]/g, '_');
     const projectHostPath = `${config.mountSource}/${project}`;
 
     if (keepContent) {
