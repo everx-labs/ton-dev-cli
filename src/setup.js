@@ -20,6 +20,7 @@ import type {
 
 import docker from "./docker";
 import config from './config';
+import { texts } from "./texts";
 import { breakWords, inputLine } from "./utils";
 
 const fs = require('fs');
@@ -28,7 +29,7 @@ const path = require('path');
 async function checkRequiredSoftware() {
     const version = await docker.numericVersion();
     if (version < 17_000_000) {
-        throw "Docker version required ^17";
+        throw texts.dockerVersionRequired;
     }
 }
 
@@ -42,21 +43,18 @@ async function checkLicenseAgreement() {
         .split('\n')
         .map(breakWords).join('\n');
     console.log(license);
-    process.stdout.write(
-        `
-This Agreement takes effect when you input a “YES” and press Enter 
-or, if earlier, when you use any of the TON DEV Software: `);
+    process.stdout.write(texts.agreementConfirmation);
     const answer = (await inputLine()).trim().toLowerCase();
     if (answer !== 'yes') {
-        console.log('\n\nLicense terms were not accepted.\n', );
+        console.log(texts.agreementRejected);
         process.exit(0);
     }
 }
 
 async function create(options: DCreateContainerOptions): Promise<void> {
-    process.stdout.write(`Container [${options.name || ''}] does not exists. Creating...`);
+    process.stdout.write(texts.containerDoesNotExists(options.name || ''));
     await docker.createContainer(options);
-    console.log(' Done.');
+    console.log(texts.done);
 }
 
 async function createCompilersContainer(): Promise<void> {
@@ -104,14 +102,14 @@ async function ensureStartedContainer(
     if (!containerInfo) {
         await checkLicenseAgreement();
         if (!docker.findImageInfo(await docker.listAllImages(), image)) {
-            process.stdout.write(`Image [${image}] is missing. Pulling (please wait)...`);
+            process.stdout.write(texts.imageDoesNotExists(image));
             await docker.pullImage(image);
-            console.log(' Done.');
+            console.log(texts.done);
         }
         await create();
         containerInfo = docker.findContainerInfo(await docker.listAllContainers(), container);
         if (!containerInfo) {
-            throw `Container [${container}] can not be created`;
+            throw texts.containerCanNotBeCreated(container);
         }
     }
     if (!docker.isRunning(containerInfo)) {

@@ -20,4 +20,8 @@ async function start() {
     return ensureStartedLocalNode();
 }
 
-export {start};
+async function stop() {
+    return ensureStartedLocalNode();
+}
+
+export {start, stop};

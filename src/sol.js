@@ -14,54 +14,94 @@
  */
 // @flow
 import compilers from "./compilers";
-import { argsToOptions, rootPath } from "./utils";
+import { argsToOptions, bindPathJoinTo } from "./utils";
+
+const os = require('os');
 const fs = require('fs');
+const path = require('path');
 
 const solArgs = {
     javaScript: { def: false, short: 'js' },
     rust: { def: false, short: 'rs' },
 };
 
-function genJavaScriptPackage(file) {
-    const imageBase64 = fs.readFileSync(rootPath(`${file}.tvc`)).toString('base64');
-    const abi = fs.readFileSync(rootPath(`${file}.abi.json`)).toString().trimRight();
+function parseFileArg(fileArg) {
+    if (os.platform() === 'darwin' && fileArg.startsWith('~/')) {
+        fileArg = path.join(os.homedir(), fileArg.substr(2));
+    }
+    const filePath = path.resolve(fileArg);
+    const dir = bindPathJoinTo(path.dirname(filePath));
+    let base = path.basename(filePath, '.sol');
+    const result = {
+        dir,
+        name: {
+            base,
+            sol: `${base}.sol`,
+            tvc: `${base}.tvc`,
+            code: `${base}.code`,
+            abi: `${base}.abi.json`,
+            package: `${base}Package`,
+            result: `${base}.result`,
+        },
+    };
+    if (!fs.existsSync(result.dir(result.name.sol))) {
+        console.error(`Source file [${fileArg}] not found.`);
+        process.exit(1);
+    }
+    return result;
+}
+
+function genJavaScriptPackage(fileArg) {
+    const {dir, name} = parseFileArg(fileArg);
+    const imageBase64 = fs.readFileSync(dir(name.tvc)).toString('base64');
+    const abi = fs.readFileSync(dir(name.abi)).toString().trimRight();
     const js =
-`const ${file}Package = {
+        `const ${name.package} = {
     abi: ${abi},
     imageBase64: '${imageBase64}'
 };
 
-module.exports = ${file}Package;
+module.exports = ${name.package};
 `;
-    fs.writeFileSync(rootPath(`${file}Package.js`), js, { encoding: 'utf8' });
+    fs.writeFileSync(dir(`${name.package}.js`), js, { encoding: 'utf8' });
+}
+
+function prepareBuildJobForFie(file, job, options, srcJobPath) {
+    const { dir, name } = parseFileArg(file);
+    fs.copyFileSync(dir(name.sol), srcJobPath(name.sol));
+    job.push(
+        `solc ${name.sol} --tvm > ${name.code}`,
+        `solc ${name.sol} --tvm_abi > ${name.abi}`,
+        `tvm_linker compile ${name.code} --lib /usr/bin/stdlib_sol.tvm --abi-json ${name.abi} > ${name.result}`
+    );
+}
+
+function prepareBuildJob(options, srcJobPath, dstJobPath) {
+    const job = [];
+    job.push(`cd ${dstJobPath()}`);
+    options.files.forEach(file => prepareBuildJobForFie(file, job, options, srcJobPath));
+    fs.writeFileSync(srcJobPath('job.sh'), job.join('\n'));
+}
+
+function completeBuild(options, srcJobPath) {
+    options.files.forEach((fileArg) => {
+        const {dir, name} = parseFileArg(fileArg);
+        const linkerResult = fs.readFileSync(srcJobPath(name.result), { encoding: 'utf8' });
+        const tvcFile = (/Saved contract to file\s*(.*\.tvc)/gi.exec(linkerResult) || [])[1];
+        fs.copyFileSync(srcJobPath(tvcFile), dir(name.tvc));
+        fs.copyFileSync(srcJobPath(name.abi), dir(name.abi));
+        if (options.javaScript) {
+            genJavaScriptPackage(fileArg);
+        }
+    });
 }
 
 async function sol(args: string[]) {
     const options = argsToOptions(args, solArgs);
-
     const compiler = await compilers.create();
-    const job = [
-        `cd ${compiler.workingDir}`
-    ];
-    options.files.forEach((file) => {
-        fs.copyFileSync(rootPath(`${file}.sol`), compiler.hostPath(`${file}.sol`));
-        job.push(
-            `solc ${file}.sol --tvm > ${file}.code`,
-            `solc ${file}.sol --tvm_abi > ${file}.abi.json`,
-            `tvm_linker compile ${file}.code --lib /usr/bin/stdlib_sol.tvm --abi-json ${file}.abi.json > ${file}.result`
-        );
-    });
-    fs.writeFileSync(compiler.hostPath('job.sh'), job.join('\n'));
-    await compiler.run('sh', `${compiler.workingDir}/job.sh`);
-    options.files.forEach((file) => {
-        const linkerResult = fs.readFileSync(compiler.hostPath(`${file}.result`), { encoding: 'utf8'});
-        const tvcFile = (/Saved contract to file\s*(.*\.tvc)/gi.exec(linkerResult) || [])[1];
-        fs.copyFileSync(compiler.hostPath(tvcFile), rootPath(`${file}.tvc`));
-        fs.copyFileSync(compiler.hostPath(`${file}.abi.json`), rootPath(`${file}.abi.json`));
-        if (options.javaScript) {
-            genJavaScriptPackage(file);
-        }
-    });
+    prepareBuildJob(options, compiler.srcJobPath, compiler.dstJobPath);
+    await compiler.run('sh', `${compiler.dstJobPath()}/job.sh`);
+    completeBuild(options, compiler.srcJobPath);
 }
 
 export { sol };

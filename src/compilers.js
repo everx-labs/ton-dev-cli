@@ -19,7 +19,7 @@ const path = require('path');
 import docker from "./docker";
 import rootConfig from "./config";
 import { ensureStartedCompilers } from "./setup";
-import { ensureCleanDirectory, run } from "./utils";
+import { bindPathJoinTo, ensureCleanDirectory, run } from "./utils";
 
 const config = rootConfig.compilers;
 export type CreateCompilerOptions = {
@@ -29,21 +29,17 @@ export type CreateCompilerOptions = {
 async function create(options?: CreateCompilerOptions) {
     const keepContent = options && options.keepContent || false;
     const containerInfo = await ensureStartedCompilers();
-    const project = process.cwd().replace(/[\\/:]/g, '_');
-    const projectHostPath = `${config.mountSource}/${project}`;
+    const jobName = process.cwd().replace(/[\\/:]/g, '_');
+    const srcJobPath = bindPathJoinTo(path.join(config.mountSource, jobName));
+    const dstJobPath = bindPathJoinTo(`${config.mountDestination}/${jobName}`, '/');
 
     if (keepContent) {
-        fs.mkdirSync(projectHostPath);
+        fs.mkdirSync(srcJobPath());
     } else {
-        ensureCleanDirectory(projectHostPath);
+        ensureCleanDirectory(srcJobPath());
     }
 
     const container = docker.getContainer(containerInfo.Id);
-    function hostPath(...items: string[]) {
-        return path.join(projectHostPath, ...items);
-    }
-
-    const workingDir = `${config.mountDestination}/${project}`;
 
     async function containerRun(...args: string[]) {
         if (os.platform() === 'win32') {
@@ -89,8 +85,8 @@ async function create(options?: CreateCompilerOptions) {
     }
 
     return {
-        workingDir,
-        hostPath,
+        srcJobPath,
+        dstJobPath,
         run: containerRun,
     }
 }

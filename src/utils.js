@@ -165,8 +165,30 @@ function argsToOptions(args: string[], types: { [string]: ArgType }): any {
     return options;
 }
 
-function rootPath(...items: string[]) {
-    return path.join(root, ...items);
+export type PathJoin = (...items: string[]) => string;
+
+function bindPathJoinTo(base: string, separator?: string): PathJoin {
+    if (separator) {
+        function join(base: string, item: string): string {
+            const baseWithSep = base.endsWith(separator);
+            const itemWithSep = item.startsWith(separator);
+            if (baseWithSep && itemWithSep) {
+                return `${base}${item.substr(1)}`;
+            }
+            if (!baseWithSep && !itemWithSep) {
+                return `${base}/${item}`;
+            }
+            return `${base}${item}`;
+        }
+        return (...items: string[]): string => {
+            let path = base;
+            items.forEach(x => path = join(path, x));
+            return path;
+        }
+    }
+    return (...items: string[]): string => {
+        return items.length > 0 ? path.join(base, ...items) : base;
+    }
 }
 
 
@@ -216,7 +238,7 @@ export {
     forceRmDir,
     ensureCleanDirectory,
     argsToOptions,
-    rootPath,
+    bindPathJoinTo,
     inputLine,
     breakWords,
 }
