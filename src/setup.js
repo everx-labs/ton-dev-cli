@@ -49,6 +49,7 @@ async function checkLicenseAgreement() {
         console.log(texts.agreementRejected);
         process.exit(0);
     }
+    console.log(texts.agreementAccepted);
 }
 
 async function create(options: DCreateContainerOptions): Promise<void> {
