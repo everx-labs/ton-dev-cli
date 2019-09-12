@@ -15,13 +15,13 @@
 // @flow
 import type {
     DCreateContainerOptions,
-    DContainerInfo,
+    DContainerInfo, DImageInfo,
 } from "./docker";
 
 import docker from "./docker";
 import config from './config';
-import { texts } from "./texts";
-import { breakWords, inputLine } from "./utils";
+import {texts} from "./texts";
+import {breakWords, inputLine} from "./utils";
 
 const fs = require('fs');
 const path = require('path');
@@ -60,7 +60,7 @@ async function create(options: DCreateContainerOptions): Promise<void> {
 
 async function createCompilersContainer(): Promise<void> {
     if (!fs.existsSync(config.compilers.mountSource)) {
-        fs.mkdirSync(config.compilers.mountSource, ({ recursive: true }: any));
+        fs.mkdirSync(config.compilers.mountSource, ({recursive: true}: any));
     }
     return create({
         name: config.compilers.container,
@@ -69,12 +69,14 @@ async function createCompilersContainer(): Promise<void> {
         Tty: true,
         Env: ['USER_AGREEMENT=yes'],
         HostConfig: {
-            Mounts: [{
-                Type: 'bind',
-                Source: config.compilers.mountSource,
-                Target: config.compilers.mountDestination,
-            }]
-        }
+            Mounts: [
+                {
+                    Type: 'bind',
+                    Source: config.compilers.mountSource,
+                    Target: config.compilers.mountDestination,
+                },
+            ],
+        },
     });
 }
 
@@ -87,17 +89,20 @@ async function createLocalNodeContainer(): Promise<void> {
         HostConfig: {
             PortBindings: {
                 '80/tcp': [
-                    { HostIp: '', HostPort: '80' }
-                ]
-            }
-        }
+                    {
+                        HostIp: '',
+                        HostPort: '80',
+                    },
+                ],
+            },
+        },
     });
 }
 
 async function ensureStartedContainer(
     container: string,
     image: string,
-    create: () => Promise<void>
+    create: () => Promise<void>,
 ): Promise<DContainerInfo> {
     let containerInfo = docker.findContainerInfo(await docker.listAllContainers(), container);
     if (!containerInfo) {
@@ -124,7 +129,7 @@ async function ensureStartedLocalNode(): Promise<DContainerInfo> {
     return ensureStartedContainer(
         config.localNode.container,
         config.localNode.image,
-        createLocalNodeContainer
+        createLocalNodeContainer,
     );
 }
 
@@ -132,7 +137,7 @@ async function ensureStartedCompilers(): Promise<DContainerInfo> {
     return ensureStartedContainer(
         config.compilers.container,
         config.compilers.image,
-        createCompilersContainer
+        createCompilersContainer,
     );
 }
 
@@ -142,4 +147,38 @@ async function setup() {
     await ensureStartedCompilers();
 }
 
-export { setup, ensureStartedLocalNode, ensureStartedCompilers };
+async function start() {
+    return ensureStartedLocalNode();
+}
+
+async function stopContainer(info: DContainerInfo) {
+    if (docker.isRunning(info)) {
+        return docker.getContainer(info.Id).stop();
+    }
+}
+
+async function stop() {
+    return Promise.all((await docker.listTonDevContainers()).map(stopContainer));
+}
+
+async function cleanContainer(info: DContainerInfo): Promise<void> {
+    const container = docker.getContainer(info.Id);
+    if (docker.isRunning(info)) {
+        await container.stop();
+    }
+    await container.remove();
+    console.log(`Container [${info.Id} have been removed.`)
+}
+
+async function cleanImage(info: DImageInfo): Promise<void> {
+    const image = docker.getImage(info.Id);
+    await image.remove();
+    console.log(`Image [${info.Id} have been removed.`)
+}
+
+async function clean() {
+    await Promise.all((await docker.listTonDevContainers()).map(cleanContainer));
+    await Promise.all((await docker.listTonDevImages()).map(cleanImage));
+}
+
+export {setup, ensureStartedLocalNode, ensureStartedCompilers, start, stop, clean};
