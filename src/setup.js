@@ -167,13 +167,13 @@ async function cleanContainer(info: DContainerInfo): Promise<void> {
         await container.stop();
     }
     await container.remove();
-    console.log(`Container [${info.Id} have been removed.`)
+    console.log(texts.containerHaveBeenRemoved(info.Id))
 }
 
 async function cleanImage(info: DImageInfo): Promise<void> {
     const image = docker.getImage(info.Id);
     await image.remove();
-    console.log(`Image [${info.Id} have been removed.`)
+    console.log(texts.imageHaveBeenRemoved(info.Id))
 }
 
 async function clean() {

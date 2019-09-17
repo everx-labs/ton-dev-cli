@@ -1,3 +1,5 @@
+import {version} from './utils';
+
 const texts = {
     agreementConfirmation: `
 This Agreement takes effect when you input a “YES” and press Enter 
@@ -14,6 +16,21 @@ or, if earlier, when you use any of the TON DEV Software: `,
     },
     containerCanNotBeCreated(name) {
         return `Container [${name}] can not be created`;
+    },
+    containerHaveBeenRemoved(id) {
+        return `Container [${id} have been removed.`;
+    },
+    imageHaveBeenRemoved(id) {
+        return `Image [${id} have been removed.`;
+    },
+    sourceFileNotFound(name) {
+        return `Source file [${name.sol}] not found.`;
+    },
+    usageHeader(version) {
+        return `TON Labs Dev Tools ${version}`;
+    },
+    invalidOption(arg) {
+        return `Invalid option: ${arg}`;
     },
     usage: `Use: tondev command { argument ... }
 
@@ -49,7 +66,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific TON DEV software governing permissions and
 limitations under the License.         
-`
+`,
 };
 
 export {texts};

@@ -13,15 +13,16 @@
  *
  */
 // @flow
+import {texts} from './texts';
+
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 
 const version = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json')).toString()).version;
-const root = process.cwd();
 
 function showUsage(usage: string) {
-    console.log(`TON Labs Dev Tools ${version}`);
+    console.log(texts.usageHeader(version));
     console.log(usage);
 }
 
@@ -107,7 +108,7 @@ function findOptionName(arg: string, types: ArgTypes) {
         const name = arg.substr(2);
         const optionName = Object.keys(types).find(x => x.toLowerCase() === name.toLowerCase());
         if (!optionName) {
-            throw `Invalid option: ${arg}`;
+            throw texts.invalidOption(arg);
         }
         return optionName;
     }
@@ -118,7 +119,7 @@ function findOptionName(arg: string, types: ArgTypes) {
             return `${type.short || ''}`.toLowerCase() === name.toLowerCase();
         });
         if (!optionEntry) {
-            throw `Invalid option: ${arg}`;
+            throw texts.invalidOption(arg);
         }
         return optionEntry[0];
     }
@@ -167,19 +168,20 @@ function argsToOptions(args: string[], types: { [string]: ArgType }): any {
 
 export type PathJoin = (...items: string[]) => string;
 
+function join(base: string, item: string, separator: string): string {
+    const baseWithSep = base.endsWith(separator);
+    const itemWithSep = item.startsWith(separator);
+    if (baseWithSep && itemWithSep) {
+        return `${base}${item.substr(1)}`;
+    }
+    if (!baseWithSep && !itemWithSep) {
+        return `${base}/${item}`;
+    }
+    return `${base}${item}`;
+}
+
 function bindPathJoinTo(base: string, separator?: string): PathJoin {
     if (separator) {
-        function join(base: string, item: string): string {
-            const baseWithSep = base.endsWith(separator);
-            const itemWithSep = item.startsWith(separator);
-            if (baseWithSep && itemWithSep) {
-                return `${base}${item.substr(1)}`;
-            }
-            if (!baseWithSep && !itemWithSep) {
-                return `${base}/${item}`;
-            }
-            return `${base}${item}`;
-        }
         return (...items: string[]): string => {
             let path = base;
             items.forEach(x => path = join(path, x));

@@ -14,6 +14,7 @@
  */
 // @flow
 import compilers from "./compilers";
+import {texts} from './texts';
 import { argsToOptions, bindPathJoinTo } from "./utils";
 
 const os = require('os');
@@ -45,7 +46,7 @@ function parseFileArg(fileArg) {
         },
     };
     if (!fs.existsSync(result.dir(result.name.sol))) {
-        console.error(`Source file [${fileArg}] not found.`);
+        console.error(texts.sourceFileNotFound(name.sol));
         process.exit(1);
     }
     return result;
