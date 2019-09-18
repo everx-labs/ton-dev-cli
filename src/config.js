@@ -16,6 +16,39 @@
 
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
+
+const tonlabsHome = path.join(os.homedir(), '.tonlabs');
+
+const defaults = {
+    localNodeImageFamily: 'tonlabs/local-node',
+    compilersImageFamily: 'tonlabs/compilers',
+};
+
+const preferences = {
+    version: 'latest',
+    localNodeHostPort: '80',
+};
+
+function preferencesFilePath() {
+    return path.join(tonlabsHome, 'preferences.json');
+}
+
+function readPreferences() {
+    try {
+        const read = JSON.parse(
+            fs.readFileSync(preferencesFilePath(), { encoding: 'utf8' })
+        );
+        Object.assign(preferences, read);
+    } catch {
+    }
+}
+
+
+
+readPreferences();
+
+const user = os.userInfo().username;
 
 const config = {
     auth: {
@@ -25,18 +58,30 @@ const config = {
         }
     },
     localNode: {
-        image: 'tonlabs/local-node:0.11.0',
-        container: 'tonlabs-local-node',
+        image: `${defaults.localNodeImageFamily}:${preferences.version}`,
+        container: `tonlabs-local-node-${user}`,
+        hostPort: preferences.localNodeHostPort,
     },
     compilers: {
-        image: 'tonlabs/compilers:0.11.0',
-        container: 'tonlabs-compilers',
-        mountSource: path.join(os.homedir(), '.tonlabs', 'compilers', 'projects'),
+        image: `${defaults.compilersImageFamily}:${preferences.version}`,
+        container: `tonlabs-compilers-${user}`,
+        mountSource: path.join(tonlabsHome, 'compilers', 'projects'),
         mountDestination: '/projects',
 
     }
 };
 
-export default config;
+function updatePreferences() {
+    fs.writeFileSync(
+        preferencesFilePath(),
+        JSON.stringify(preferences),
+        { encoding: 'utf8' }
+    );
+    config.localNode.image = `${defaults.localNodeImageFamily}:${preferences.version}`;
+    config.compilers.image = `${defaults.compilersImageFamily}:${preferences.version}`;
+    config.localNode.hostPort = preferences.localNodeHostPort;
+}
+
+export { config, preferences, updatePreferences, defaults };
 
 

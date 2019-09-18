@@ -13,7 +13,7 @@
  *
  */
 // @flow
-import {texts} from './texts';
+import { texts } from './texts';
 
 const fs = require('fs');
 const path = require('path');
@@ -182,9 +182,10 @@ function join(base: string, item: string, separator: string): string {
 
 function bindPathJoinTo(base: string, separator?: string): PathJoin {
     if (separator) {
+        const sep = separator;
         return (...items: string[]): string => {
             let path = base;
-            items.forEach(x => path = join(path, x));
+            items.forEach(x => path = join(path, x, sep));
             return path;
         }
     }
@@ -231,6 +232,34 @@ function breakWords(s: string): string {
 }
 
 
+const https = require('https');
+
+function httpsGetJson(url: string): Promise<any> {
+    return new Promise<*[]>((resolve, reject) => {
+        const tryUrl = (url) => {
+            https.get(url, function (res) {
+                let body = '';
+
+                res.on('data', function (chunk) {
+                    body += chunk;
+                });
+
+                res.on('end', function () {
+                    if (res.statusCode === 301) {
+                        const redirectUrl = res.headers['location'];
+                        tryUrl(redirectUrl);
+                        return;
+                    }
+                    const response = JSON.parse(body);
+                    resolve(response);
+                });
+            }).on('error', (error) => {
+                reject(error);
+            });
+        };
+        tryUrl(url);
+    })
+}
 
 export {
     version,
@@ -243,4 +272,5 @@ export {
     bindPathJoinTo,
     inputLine,
     breakWords,
+    httpsGetJson,
 }

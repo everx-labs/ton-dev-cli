@@ -19,9 +19,9 @@ import type {
 } from "./docker";
 
 import docker from "./docker";
-import config from './config';
-import {texts} from "./texts";
-import {breakWords, inputLine} from "./utils";
+import { config, preferences, updatePreferences } from './config';
+import { texts } from "./texts";
+import { argsToOptions, breakWords, inputLine, showUsage } from "./utils";
 
 const fs = require('fs');
 const path = require('path');
@@ -33,8 +33,10 @@ async function checkRequiredSoftware() {
     }
 }
 
+let skipLicenseAgreement = false;
+
 async function checkLicenseAgreement() {
-    if ((await docker.listTonDevContainers()).length > 0) {
+    if (skipLicenseAgreement || (await docker.listTonDevContainers()).length > 0) {
         return;
     }
     const license = fs
@@ -60,7 +62,7 @@ async function create(options: DCreateContainerOptions): Promise<void> {
 
 async function createCompilersContainer(): Promise<void> {
     if (!fs.existsSync(config.compilers.mountSource)) {
-        fs.mkdirSync(config.compilers.mountSource, ({recursive: true}: any));
+        fs.mkdirSync(config.compilers.mountSource, ({ recursive: true }: any));
     }
     return create({
         name: config.compilers.container,
@@ -91,7 +93,7 @@ async function createLocalNodeContainer(): Promise<void> {
                 '80/tcp': [
                     {
                         HostIp: '',
-                        HostPort: '80',
+                        HostPort: `${config.localNode.hostPort}`,
                     },
                 ],
             },
@@ -141,8 +143,17 @@ async function ensureStartedCompilers(): Promise<DContainerInfo> {
     );
 }
 
-async function setup() {
+async function setup(args: string[]) {
+    const options = argsToOptions(args, {
+        port: { def: '', valueCount: 1, short: 'p' }
+    });
     await checkRequiredSoftware();
+    if (options.port !== '') {
+        skipLicenseAgreement = (await docker.listTonDevContainers()).length > 0;
+        preferences.localNodeHostPort = options.port;
+        updatePreferences();
+        await clean(['-c']);
+    }
     await ensureStartedLocalNode();
     await ensureStartedCompilers();
 }
@@ -176,9 +187,31 @@ async function cleanImage(info: DImageInfo): Promise<void> {
     console.log(texts.imageHaveBeenRemoved(info.Id))
 }
 
-async function clean() {
-    await Promise.all((await docker.listTonDevContainers()).map(cleanContainer));
-    await Promise.all((await docker.listTonDevImages()).map(cleanImage));
+async function clean(args: string[]) {
+    const options = argsToOptions(args, {
+        images: { def: false, short: 'i' },
+        containers: { def: false, short: 'c' },
+    });
+    if (!options.images && !options.containers) {
+        options.images = true;
+        options.containers = true;
+    }
+    if (options.containers) {
+        await Promise.all((await docker.listTonDevContainers()).map(cleanContainer));
+    }
+    if (options.images) {
+        await Promise.all((await docker.listTonDevImages()).map(cleanImage));
+    }
 }
 
-export {setup, ensureStartedLocalNode, ensureStartedCompilers, start, stop, clean};
+async function useVersion(args: string[]) {
+    if (args.length !== 1) {
+        showUsage(texts.usage);
+        process.exit(1);
+    }
+    preferences.version = args[0];
+    updatePreferences();
+    await setup([]);
+}
+
+export { setup, ensureStartedLocalNode, ensureStartedCompilers, start, stop, clean, useVersion };

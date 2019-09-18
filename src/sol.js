@@ -46,7 +46,7 @@ function parseFileArg(fileArg) {
         },
     };
     if (!fs.existsSync(result.dir(result.name.sol))) {
-        console.error(texts.sourceFileNotFound(name.sol));
+        console.error(texts.sourceFileNotFound(result.name.sol));
         process.exit(1);
     }
     return result;

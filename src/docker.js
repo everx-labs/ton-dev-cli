@@ -13,7 +13,7 @@
  *
  */
 // @flow
-import config from "./config";
+import { config, defaults } from "./config";
 import Docker from 'dockerode';
 
 import { versionToNumber } from "./utils";
@@ -145,8 +145,19 @@ function hasName(container: DContainerInfo, name: string): boolean {
     return !!(container.Names || []).find(n => n.toLowerCase() === nameToFind);
 }
 
+function imageMatched(image: string, tag: string): boolean {
+    image = image.toLowerCase();
+    tag = tag.toLowerCase();
+    const tagParts = tag.split(':');
+    if (tagParts.length > 1) {
+        return image === tag;
+    }
+    const imageParts = image.split(':');
+    return imageParts[0] === tagParts[0];
+}
+
 function imageHasRepoTag(info: DImageInfo, tag: string): boolean {
-    return !!(info.RepoTags || []).find(n => n.toLowerCase() === tag.toLowerCase());
+    return !!(info.RepoTags || []).find(n => imageMatched(n, tag));
 }
 
 function findContainerInfo(containers: DContainerInfo[], name: string): ?DContainerInfo {
@@ -162,17 +173,17 @@ function isRunning(info: ?DContainerInfo): boolean {
 }
 
 function containerBelongsToImage(info: DContainerInfo, image: string): boolean {
-    return info.Image.toLowerCase() === image.toLowerCase();
+    return imageMatched(info.Image, image);
 }
 
 function isTonDevContainer(info: DContainerInfo): boolean {
-    return containerBelongsToImage(info, config.localNode.image)
-        || containerBelongsToImage(info, config.compilers.image);
+    return containerBelongsToImage(info, defaults.localNodeImageFamily)
+        || containerBelongsToImage(info, defaults.compilersImageFamily);
 }
 
 function isTonDevImage(info: DImageInfo): boolean {
-    return imageHasRepoTag(info, config.localNode.image)
-        || imageHasRepoTag(info, config.compilers.image);
+    return imageHasRepoTag(info, defaults.localNodeImageFamily)
+        || imageHasRepoTag(info, defaults.compilersImageFamily);
 }
 
 async function listTonDevContainers(): Promise<DContainerInfo[]> {

@@ -17,11 +17,11 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 import docker from "./docker";
-import rootConfig from "./config";
+import {config} from "./config";
 import { ensureStartedCompilers } from "./setup";
 import { bindPathJoinTo, ensureCleanDirectory, run } from "./utils";
 
-const config = rootConfig.compilers;
+const compilersConfig = config.compilers;
 export type CreateCompilerOptions = {
     keepContent?: boolean,
 }
@@ -30,8 +30,8 @@ async function create(options?: CreateCompilerOptions) {
     const keepContent = options && options.keepContent || false;
     const containerInfo = await ensureStartedCompilers();
     const jobName = process.cwd().replace(/[\\/:]/g, '_');
-    const srcJobPath = bindPathJoinTo(path.join(config.mountSource, jobName));
-    const dstJobPath = bindPathJoinTo(`${config.mountDestination}/${jobName}`, '/');
+    const srcJobPath = bindPathJoinTo(path.join(compilersConfig.mountSource, jobName));
+    const dstJobPath = bindPathJoinTo(`${compilersConfig.mountDestination}/${jobName}`, '/');
 
     if (keepContent) {
         fs.mkdirSync(srcJobPath());

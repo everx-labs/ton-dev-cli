@@ -18,15 +18,18 @@
 
 import {texts} from './texts';
 import {showUsage} from './utils';
-import {setup, start, stop, clean} from './setup';
+import { setup, start, stop, clean, useVersion } from './setup';
+import {info} from './info';
 import {sol} from './sol';
 
 async function main() {
     const commands = {
+        info,
         setup,
         start,
         stop,
         clean,
+        use: useVersion,
         sol,
     };
     const command = commands[`${process.argv[2]}`.toLowerCase()];
