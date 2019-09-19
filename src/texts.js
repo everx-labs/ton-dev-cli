@@ -8,8 +8,8 @@ or, if earlier, when you use any of the TON DEV Software: `,
     noTonDevImages: 'There are no TON Dev Images',
     noTonDevContainers: 'There are no TON Dev Containers',
     done: ' Done.',
-    availableVersions(versions) {
-        return `Available versions: ${versions}`;
+    availableVersions(imageFamily, versions) {
+        return `Available versions [${imageFamily}]: ${versions}`;
     },
     containerDoesNotExists(name) {
         return `Container [${name}] does not exists. Creating...`;
@@ -86,6 +86,9 @@ Licensed under the SOFTWARE EVALUATION License (https://www.ton.dev/licenses)
     },
     localNodeBoundToPort(port) {
         return `Local Node is bound to port: ${port}`;
+    },
+    localNodeArangoBoundToPort(port) {
+        return `Local Node Arango DB is bound to port: ${port}`;
     }
 };
 

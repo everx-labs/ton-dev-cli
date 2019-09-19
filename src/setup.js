@@ -15,11 +15,11 @@
 // @flow
 import type {
     DCreateContainerOptions,
-    DContainerInfo, DImageInfo,
+    DContainerInfo, DImageInfo, DPortBindings,
 } from "./docker";
 
 import docker from "./docker";
-import { config, preferences, updatePreferences } from './config';
+import { config, defaults, preferences, updatePreferences } from './config';
 import { texts } from "./texts";
 import { argsToOptions, breakWords, inputLine, showUsage } from "./utils";
 
@@ -83,20 +83,29 @@ async function createCompilersContainer(): Promise<void> {
 }
 
 async function createLocalNodeContainer(): Promise<void> {
+    const ports: DPortBindings = {
+        '80/tcp': [
+            {
+                HostIp: '',
+                HostPort: `${config.localNode.hostPort}`,
+            },
+        ],
+    };
+    if (preferences.localNodeArangoHostPort !== '') {
+        ports['8529/tcp'] = [
+            {
+                HostIp: '',
+                HostPort: preferences.localNodeArangoHostPort,
+            },
+        ]
+    }
     return create({
         name: config.localNode.container,
         interactive: true,
         Image: config.localNode.image,
         Env: ['USER_AGREEMENT=yes'],
         HostConfig: {
-            PortBindings: {
-                '80/tcp': [
-                    {
-                        HostIp: '',
-                        HostPort: `${config.localNode.hostPort}`,
-                    },
-                ],
-            },
+            PortBindings: ports,
         },
     });
 }
@@ -145,12 +154,28 @@ async function ensureStartedCompilers(): Promise<DContainerInfo> {
 
 async function setup(args: string[]) {
     const options = argsToOptions(args, {
-        port: { def: '', valueCount: 1, short: 'p' }
+        port: { def: '', valueCount: 1, short: 'p' },
+        arango: { def: '', valueCount: 1, short: 'a' },
     });
     await checkRequiredSoftware();
-    if (options.port !== '') {
+    if (options.port !== '' || options.arango !== '') {
         skipLicenseAgreement = (await docker.listTonDevContainers()).length > 0;
-        preferences.localNodeHostPort = options.port;
+        if (options.port !== '') {
+            preferences.localNodeHostPort = options.port;
+        }
+        if (options.arango !== '') {
+            switch (options.arango.toLowerCase()) {
+            case 'bind':
+                preferences.localNodeArangoHostPort = defaults.localNodeArangoHostPort;
+                break;
+            case 'unbind':
+                preferences.localNodeArangoHostPort = '';
+                break;
+            default:
+                preferences.localNodeArangoHostPort = options.arango;
+                break;
+            }
+        }
         updatePreferences();
         await clean(['-c']);
     }

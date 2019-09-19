@@ -23,11 +23,13 @@ const tonlabsHome = path.join(os.homedir(), '.tonlabs');
 const defaults = {
     localNodeImageFamily: 'tonlabs/local-node',
     compilersImageFamily: 'tonlabs/compilers',
+    localNodeArangoHostPort: '8529',
 };
 
 const preferences = {
     version: 'latest',
     localNodeHostPort: '80',
+    localNodeArangoHostPort: '',
 };
 
 function preferencesFilePath() {

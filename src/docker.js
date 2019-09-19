@@ -64,6 +64,10 @@ export type DMount = {
     Type: 'bind' | 'volume' | 'tmpfs',
 }
 
+export type DPortBindings = {
+    [string]: { HostIp: string, HostPort: string }[]
+};
+
 export type DCreateContainerOptions = {
     name?: string,
     Image: string,
@@ -76,12 +80,10 @@ export type DCreateContainerOptions = {
         Mounts?: DMount[],
     },
     ExposedPorts?: {
-        [string]: {}
+        [string]: {},
     },
     HostConfig?: {
-        PortBindings?: {
-            [string]: { HostIp: string, HostPort: string }[]
-        }
+        PortBindings?: DPortBindings,
     }
 }
 

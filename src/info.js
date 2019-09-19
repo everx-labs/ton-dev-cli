@@ -38,6 +38,10 @@ async function showTonDevImages() {
     }
 }
 
+function mapContainerName(name: string): string {
+    return name.startsWith('/') ? name.substr(1) : name;
+}
+
 async function showTonDevContainers() {
     const containers = await docker.listTonDevContainers();
     if (containers.length > 0) {
@@ -45,23 +49,32 @@ async function showTonDevContainers() {
         console.log(texts.tonDevContainers(containers.length));
         console.log();
         containers.forEach((container) => {
-            console.log(`${container.Names} (${container.Image}) ${container.State}`);
+            console.log(`${container.Names.map(mapContainerName)} (${container.Image}) ${container.State}`);
         });
     } else {
         console.log(texts.noTonDevContainers);
     }
 }
+
+async function showAvailableVersions(imageFamily) {
+    console.log(texts.availableVersions(imageFamily, (await listTags(imageFamily)).join(', ')));
+}
+
 async function info() {
     console.log(texts.usageHeader(version));
     await showTonDevImages();
     await showTonDevContainers();
 
     console.log();
-    console.log(texts.usedVersion(preferences.version));
-    console.log(texts.availableVersions((await listTags(defaults.compilersImageFamily)).join(', ')));
-    console.log();
     console.log(texts.localNodeBoundToPort(preferences.localNodeHostPort));
+    if (preferences.localNodeArangoHostPort !== '') {
+        console.log(texts.localNodeArangoBoundToPort(preferences.localNodeArangoHostPort));
+    }
+    console.log();
+    console.log(texts.usedVersion(preferences.version));
+    await showAvailableVersions(defaults.compilersImageFamily);
+    await showAvailableVersions(defaults.localNodeImageFamily);
 }
 
 
-export {info};
+export { info };
