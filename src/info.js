@@ -12,8 +12,10 @@
  * limitations under the License.
  *
  */
+// @flow
 
-import { defaults, preferences } from "./config";
+import { config, defaultValues } from "./config";
+import type { DContainerInfo } from "./docker";
 import docker from "./docker";
 import { texts } from "./texts";
 import { version, httpsGetJson } from "./utils";
@@ -31,7 +33,7 @@ async function showTonDevImages() {
         console.log(texts.tonDevImages(images.length));
         console.log();
         images.forEach((image) => {
-            console.log(`${image.RepoTags}`);
+            console.log(`  ${image.RepoTags}`);
         });
     } else {
         console.log(texts.noTonDevImages);
@@ -49,7 +51,7 @@ async function showTonDevContainers() {
         console.log(texts.tonDevContainers(containers.length));
         console.log();
         containers.forEach((container) => {
-            console.log(`${container.Names.map(mapContainerName)} (${container.Image}) ${container.State}`);
+            console.log(`  ${container.Names.map(mapContainerName)} (${container.Image}) ${container.State}`);
         });
     } else {
         console.log(texts.noTonDevContainers);
@@ -57,23 +59,43 @@ async function showTonDevContainers() {
 }
 
 async function showAvailableVersions(imageFamily) {
-    console.log(texts.availableVersions(imageFamily, (await listTags(imageFamily)).join(', ')));
+    console.log(`  ${imageFamily}: ${(await listTags(imageFamily)).join(', ')}`);
+}
+
+function showContainerInfo(containers: DContainerInfo[], name: string) {
+    const container = docker.findContainerInfo(containers, name);
+    if (container) {
+        console.log(`  Docker image: ${container.Image}`);
+        console.log(`  Docker container: ${container.Names.map(mapContainerName)} ${container.State}`);
+    }
 }
 
 async function info() {
     console.log(texts.usageHeader(version));
-    await showTonDevImages();
-    await showTonDevContainers();
+    const containers = await docker.listTonDevContainers();
+
+    config.net.all.forEach((net) => {
+        console.log();
+        console.log(texts.netHeader(net.preferences.name));
+        console.log();
+        console.log(texts.usedVersion(net.preferences.version));
+        console.log(texts.netHostPort(net.preferences.hostPort));
+        if (net.preferences.arangoHostPort !== '') {
+            console.log(texts.netArangoHostPort(net.preferences.arangoHostPort));
+        }
+        showContainerInfo(containers, net.container);
+    });
+    console.log();
+    console.log(texts.compilerHeader);
+    console.log();
+    console.log(texts.usedVersion(config.compilers.preferences.version));
+    showContainerInfo(containers, config.compilers.container);
 
     console.log();
-    console.log(texts.localNodeBoundToPort(preferences.localNodeHostPort));
-    if (preferences.localNodeArangoHostPort !== '') {
-        console.log(texts.localNodeArangoBoundToPort(preferences.localNodeArangoHostPort));
-    }
+    console.log(texts.availableVersions);
     console.log();
-    console.log(texts.usedVersion(preferences.version));
-    await showAvailableVersions(defaults.compilersImageFamily);
-    await showAvailableVersions(defaults.localNodeImageFamily);
+    await showAvailableVersions(defaultValues.compilers.image);
+    await showAvailableVersions(defaultValues.net.image);
 }
 
 

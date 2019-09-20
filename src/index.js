@@ -16,11 +16,12 @@
  *
  */
 
-import {texts} from './texts';
-import {showUsage} from './utils';
+import { completeConfig } from "./config";
+import { texts } from './texts';
+import { showUsage } from './utils';
 import { setup, start, stop, clean, useVersion } from './setup';
-import {info} from './info';
-import {sol} from './sol';
+import { info } from './info';
+import { sol } from './sol';
 
 async function main() {
     const commands = {
@@ -34,7 +35,9 @@ async function main() {
     };
     const command = commands[`${process.argv[2]}`.toLowerCase()];
     if (command) {
-        await command(process.argv.slice(3));
+        const args = process.argv.slice(3);
+        completeConfig(args);
+        await command(args);
     } else {
         showUsage(texts.usage);
     }

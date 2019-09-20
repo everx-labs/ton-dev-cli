@@ -13,13 +13,21 @@
  *
  */
 // @flow
+
+import type { CompilersConfig, NetConfig } from "./config";
 import type {
     DCreateContainerOptions,
     DContainerInfo, DImageInfo, DPortBindings,
 } from "./docker";
 
 import docker from "./docker";
-import { config, defaults, preferences, updatePreferences } from './config';
+import {
+    config,
+    defaultValues,
+    netsFromArgsOrAll,
+    netsFromArgsOrDefault,
+    updatePreferences
+} from './config';
 import { texts } from "./texts";
 import { argsToOptions, breakWords, inputLine, showUsage } from "./utils";
 
@@ -82,27 +90,27 @@ async function createCompilersContainer(): Promise<void> {
     });
 }
 
-async function createLocalNodeContainer(): Promise<void> {
+async function createLocalNodeContainer(net: NetConfig): Promise<void> {
     const ports: DPortBindings = {
         '80/tcp': [
             {
                 HostIp: '',
-                HostPort: `${config.localNode.hostPort}`,
+                HostPort: `${net.preferences.hostPort}`,
             },
         ],
     };
-    if (preferences.localNodeArangoHostPort !== '') {
+    if (net.preferences.arangoHostPort !== '') {
         ports['8529/tcp'] = [
             {
                 HostIp: '',
-                HostPort: preferences.localNodeArangoHostPort,
+                HostPort: net.preferences.arangoHostPort,
             },
         ]
     }
     return create({
-        name: config.localNode.container,
+        name: net.container,
         interactive: true,
-        Image: config.localNode.image,
+        Image: net.image,
         Env: ['USER_AGREEMENT=yes'],
         HostConfig: {
             PortBindings: ports,
@@ -136,20 +144,12 @@ async function ensureStartedContainer(
     return containerInfo;
 }
 
-async function ensureStartedLocalNode(): Promise<DContainerInfo> {
-    return ensureStartedContainer(
-        config.localNode.container,
-        config.localNode.image,
-        createLocalNodeContainer,
-    );
+async function ensureStartedLocalNode(net: NetConfig): Promise<DContainerInfo> {
+    return ensureStartedContainer(net.container, net.image, () => createLocalNodeContainer(net));
 }
 
 async function ensureStartedCompilers(): Promise<DContainerInfo> {
-    return ensureStartedContainer(
-        config.compilers.container,
-        config.compilers.image,
-        createCompilersContainer,
-    );
+    return ensureStartedContainer(config.compilers.container, config.compilers.image, createCompilersContainer);
 }
 
 async function setup(args: string[]) {
@@ -161,30 +161,36 @@ async function setup(args: string[]) {
     if (options.port !== '' || options.arango !== '') {
         skipLicenseAgreement = (await docker.listTonDevContainers()).length > 0;
         if (options.port !== '') {
-            preferences.localNodeHostPort = options.port;
+            netsFromArgsOrDefault().forEach((net) => {
+                net.preferences.hostPort = options.port;
+            });
         }
         if (options.arango !== '') {
+            let arangoHostPort = '';
             switch (options.arango.toLowerCase()) {
             case 'bind':
-                preferences.localNodeArangoHostPort = defaults.localNodeArangoHostPort;
+                arangoHostPort = defaultValues.net.arangoPort;
                 break;
             case 'unbind':
-                preferences.localNodeArangoHostPort = '';
+                arangoHostPort = '';
                 break;
             default:
-                preferences.localNodeArangoHostPort = options.arango;
+                arangoHostPort = options.arango;
                 break;
             }
+            netsFromArgsOrDefault().forEach((net) => {
+                net.preferences.arangoHostPort = arangoHostPort;
+            });
         }
         updatePreferences();
         await clean(['-c']);
     }
-    await ensureStartedLocalNode();
+    await Promise.all(netsFromArgsOrAll().map(ensureStartedLocalNode));
     await ensureStartedCompilers();
 }
 
 async function start() {
-    return ensureStartedLocalNode();
+    return Promise.all(netsFromArgsOrAll().map(ensureStartedLocalNode));
 }
 
 async function stopContainer(info: DContainerInfo) {
@@ -234,7 +240,9 @@ async function useVersion(args: string[]) {
         showUsage(texts.usage);
         process.exit(1);
     }
-    preferences.version = args[0];
+    netsFromArgsOrAll().forEach((net) => {
+        net.preferences.version = args[0];
+    });
     updatePreferences();
     await setup([]);
 }

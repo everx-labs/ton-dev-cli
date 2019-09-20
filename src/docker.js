@@ -13,7 +13,7 @@
  *
  */
 // @flow
-import { config, defaults } from "./config";
+import { config, defaultValues } from "./config";
 import Docker from 'dockerode';
 
 import { versionToNumber } from "./utils";
@@ -179,13 +179,13 @@ function containerBelongsToImage(info: DContainerInfo, image: string): boolean {
 }
 
 function isTonDevContainer(info: DContainerInfo): boolean {
-    return containerBelongsToImage(info, defaults.localNodeImageFamily)
-        || containerBelongsToImage(info, defaults.compilersImageFamily);
+    return containerBelongsToImage(info, defaultValues.net.image)
+        || containerBelongsToImage(info, defaultValues.compilers.image);
 }
 
 function isTonDevImage(info: DImageInfo): boolean {
-    return imageHasRepoTag(info, defaults.localNodeImageFamily)
-        || imageHasRepoTag(info, defaults.compilersImageFamily);
+    return imageHasRepoTag(info, defaultValues.net.image)
+        || imageHasRepoTag(info, defaultValues.compilers.image);
 }
 
 async function listTonDevContainers(): Promise<DContainerInfo[]> {

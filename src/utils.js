@@ -18,7 +18,6 @@ import { texts } from './texts';
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
-
 const version = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json')).toString()).version;
 
 function showUsage(usage: string) {
@@ -103,11 +102,14 @@ export type ArgTypes = {
     [string]: ArgType
 }
 
-function findOptionName(arg: string, types: ArgTypes) {
+function findOptionName(arg: string, types: ArgTypes, strict: boolean) {
     if (arg.startsWith('--')) {
         const name = arg.substr(2);
         const optionName = Object.keys(types).find(x => x.toLowerCase() === name.toLowerCase());
         if (!optionName) {
+            if (!strict) {
+                return null;
+            }
             throw texts.invalidOption(arg);
         }
         return optionName;
@@ -119,6 +121,9 @@ function findOptionName(arg: string, types: ArgTypes) {
             return `${type.short || ''}`.toLowerCase() === name.toLowerCase();
         });
         if (!optionEntry) {
+            if (!strict) {
+                return null;
+            }
             throw texts.invalidOption(arg);
         }
         return optionEntry[0];
@@ -127,7 +132,7 @@ function findOptionName(arg: string, types: ArgTypes) {
 }
 
 
-function argsToOptions(args: string[], types: { [string]: ArgType }): any {
+function argsToOptions(args: string[], types: { [string]: ArgType }, strict?: boolean): any {
     const options = {
         files: [],
     };
@@ -150,7 +155,7 @@ function argsToOptions(args: string[], types: { [string]: ArgType }): any {
             }
             pendingOption = null;
         } else {
-            const optionName = findOptionName(arg, types);
+            const optionName = findOptionName(arg, types, strict);
             if (optionName) {
                 const type = types[optionName];
                 if ((type.valueCount || 0) > 0) {
@@ -261,6 +266,19 @@ function httpsGetJson(url: string): Promise<any> {
     })
 }
 
+function toIdentifier(s: string): string {
+    let identifier = '';
+    for (let i = 0; i < s.length; i += 1) {
+        const c = s[i];
+        const isLetter = c.toLowerCase() !== c.toUpperCase();
+        const isDigit = !isLetter && '0123456789'.includes(c);
+        if (isLetter || isDigit) {
+            identifier += c;
+        }
+    }
+    return identifier;
+}
+
 export {
     version,
     showUsage,
@@ -273,4 +291,5 @@ export {
     inputLine,
     breakWords,
     httpsGetJson,
+    toIdentifier,
 }
