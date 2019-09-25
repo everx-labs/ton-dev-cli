@@ -89,10 +89,15 @@ function completeBuild(options, srcJobPath) {
         const {dir, name} = parseFileArg(fileArg);
         const linkerResult = fs.readFileSync(srcJobPath(name.result), { encoding: 'utf8' });
         const tvcFile = (/Saved contract to file\s*(.*\.tvc)/gi.exec(linkerResult) || [])[1];
-        fs.copyFileSync(srcJobPath(tvcFile), dir(name.tvc));
-        fs.copyFileSync(srcJobPath(name.abi), dir(name.abi));
-        if (options.javaScript) {
-            genJavaScriptPackage(fileArg);
+        if (tvcFile) {
+            fs.copyFileSync(srcJobPath(tvcFile), dir(name.tvc));
+            fs.copyFileSync(srcJobPath(name.abi), dir(name.abi));
+            if (options.javaScript) {
+                genJavaScriptPackage(fileArg);
+            }
+        } else {
+            console.log(linkerResult);
+            process.exit()
         }
     });
 }
