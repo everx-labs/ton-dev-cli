@@ -27,7 +27,7 @@ or, if earlier, when you use any of the TON DEV Software: `,
         return `Image [${id} have been removed.`;
     },
     sourceFileNotFound(name) {
-        return `Source file [${name.sol}] not found.`;
+        return `Source file [${name}] not found.`;
     },
     usageHeader(version) {
         return `TON Labs Dev Tools ${version}`;
