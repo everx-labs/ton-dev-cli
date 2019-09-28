@@ -67,6 +67,8 @@ function showContainerInfo(containers: DContainerInfo[], name: string) {
     if (container) {
         console.log(`  Docker image: ${container.Image}`);
         console.log(`  Docker container: ${container.Names.map(mapContainerName)} ${container.State}`);
+    } else {
+        console.log(`  Docker container: missing`);
     }
 }
 

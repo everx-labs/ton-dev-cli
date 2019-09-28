@@ -22,6 +22,7 @@ import { showUsage } from './utils';
 import { setup, start, stop, clean, useVersion } from './setup';
 import { info } from './info';
 import { sol } from './sol';
+import { spy } from './spy';
 
 async function main() {
     const commands = {
@@ -32,6 +33,7 @@ async function main() {
         clean,
         use: useVersion,
         sol,
+        spy,
     };
     const command = commands[`${process.argv[2]}`.toLowerCase()];
     if (command) {
