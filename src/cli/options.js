@@ -40,9 +40,9 @@ export type RecreateOptions = CompilersWithNetworksOptions;
 export type CleanOptions = CompilersWithNetworksOptions;
 export type UseOptions = CompilersWithNetworksOptions;
 
-export type SetOptions = NetworksOptions & {
-    port?: number,
-    arangoPort?: number,
+export type SolOptions = {
+    clientLanguages?: string,
+    clientLevel?: string,
 }
 
 function requiredNetwork(dev: Dev, name: string): Network {

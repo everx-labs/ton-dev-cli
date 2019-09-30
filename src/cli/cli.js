@@ -14,6 +14,7 @@
  */
 // @flow
 
+import { ClientCodeLevel } from "../compilers/client-code";
 import { Solidity } from "../compilers/solidity";
 import { Dev } from "../dev";
 import type { SetNetworkOptions } from "../networks/networks";
@@ -22,13 +23,14 @@ import type {
     CleanOptions,
     RecreateOptions,
     RestartOptions,
-    SetupOptions,
+    SetupOptions, SolOptions,
     StartOptions,
     StopOptions,
     UseOptions
 } from "./options";
 
 import { infoCommand } from "./info.js";
+import { spy } from "./spy";
 
 const program = require('commander');
 
@@ -66,11 +68,15 @@ async function useCommand(dev: Dev, version: string, options: UseOptions) {
     await dev.useVersion(version, compilersWithNetworks(dev, options));
 }
 
-async function solCommand(dev: Dev, files: string[], options: SolidityBuildOptions) {
-    await Solidity.build(dev, files, options);
+async function solCommand(dev: Dev, files: string[], options: SolOptions) {
+    await Solidity.build(dev, files, {
+        clientLanguages: (options.clientLanguages || '').split(','),
+        clientLevel: options.clientLevel || ClientCodeLevel.run,
+    });
 }
 
-async function spyCommand(dev: Dev, networks: string[], options: BuildOptions) {
+async function spyCommand(dev: Dev, networks: string[]) {
+    await spy(dev, networks);
 }
 
 const sharedOptions = {
@@ -155,8 +161,7 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .action(command(solCommand));
 
     program
-        .command('spy [networks]').description('Run network scanner')
-        .option(...sharedOptions.n)
+        .command('spy [networks...]').description('Run network scanner')
         .action(command(spyCommand));
 
     // .command('update', `update ${dev.name} docker images`).action(action)

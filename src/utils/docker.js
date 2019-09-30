@@ -129,7 +129,7 @@ export const ContainerStatus = {
 
 export type ContainerStatusType = 0 | 1 | 2;
 
-export type ContainerDef = {
+export interface ContainerDef {
     requiredImage: string,
     containerName: string,
     createContainer(docker: DevDocker): Promise<DockerContainer>

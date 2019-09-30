@@ -15,7 +15,7 @@
 
 // @flow
 
-import type { DockerContainer, DPortBindings } from "../utils/docker";
+import type { ContainerDef, DockerContainer, DPortBindings } from "../utils/docker";
 import { DevDocker } from "../utils/docker";
 import { userIdentifier } from "../utils/utils";
 
@@ -31,7 +31,7 @@ export type SetNetworkOptions = {
     arangoPort?: string,
 }
 
-class Network {
+class Network implements ContainerDef {
     static imagePrefix = 'tonlabs/local-node';
     static containerPrefix = 'tonlabs-local-node';
     static defaultName = 'default';
@@ -104,7 +104,7 @@ class Network {
     setOptions(options: SetNetworkOptions) {
         const config = this.getConfig();
         if (options.port) {
-            config.hostPort = port;
+            config.hostPort = options.port;
         }
         if (options.arangoPort) {
             if (options.arangoPort === 'bind') {

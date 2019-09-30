@@ -28,8 +28,8 @@
 	"dependencies": {
 		"dockerode": "^2.5.8",
 		"@babel/runtime": "^7.6.0",
-		"ton-client-node-js": "^0.12.0",
-		"ton-client-js": "^0.12.0",
+		"ton-client-node-js": "https://github.com/tonlabs/ton-client-node-js.git#rc-0.12.1",
+		"ton-client-js": "https://github.com/tonlabs/ton-client-js.git#rc-0.12.1",
 		"commander": "latest"
 	},
 	"devDependencies": {

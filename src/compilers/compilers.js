@@ -14,7 +14,7 @@
  */
 // @flow
 const fs = require('fs');
-import type { DockerContainer } from "../utils/docker";
+import type { ContainerDef, DockerContainer } from "../utils/docker";
 import { DevDocker } from "../utils/docker";
 import { tonlabsHomePath, userIdentifier } from "../utils/utils";
 
@@ -23,7 +23,7 @@ export type CompilersConfig = {
 }
 
 
-export class Compilers {
+export class Compilers implements ContainerDef {
     static imagePrefix = 'tonlabs/compilers';
     static containerPrefix = 'tonlabs-compilers';
     static defaultConfig: CompilersConfig = Object.freeze({

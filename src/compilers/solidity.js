@@ -16,15 +16,30 @@
 
 
 import { Dev } from "../dev";
+import type { PathJoin } from "../utils/utils";
 import { parseFileArg } from "../utils/utils";
 import type { ClientCodeOptions } from "./client-code";
 import { ClientCode } from "./client-code";
 import { CompilersJob } from "./job";
+
 const fs = require('fs');
 
 export type SolidityBuildOptions = ClientCodeOptions;
 
-function parseSolidityFileArg(fileArg) {
+type SolidityFileArg = {
+    dir: PathJoin,
+    name: {
+        base: string,
+        sol: string,
+        tvc: string,
+        code: string,
+        abi: string,
+        package: string,
+        result: string,
+    },
+}
+
+function parseSolidityFileArg(fileArg: string): SolidityFileArg {
     const parsed = parseFileArg(fileArg, '.sol');
     return {
         dir: parsed.dir,
@@ -68,7 +83,7 @@ export class Solidity {
         await ClientCode.generate(this.job, this.files, this.options);
     }
 
-    prepareBuildBatchForFie(file, batch) {
+    prepareBuildBatchForFie(file: string, batch: string[]) {
         const { dir, name } = parseSolidityFileArg(file);
         fs.copyFileSync(dir(name.sol), this.job.hostPath(name.sol));
         batch.push(
@@ -97,6 +112,6 @@ export class Solidity {
                 console.log(linkerResult);
                 process.exit()
             }
-    });
+        });
     }
 }

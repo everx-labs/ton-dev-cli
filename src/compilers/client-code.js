@@ -31,24 +31,20 @@ export const ClientCodeLanguage = {
 };
 
 export type ClientCodeOptions = {
-    clientLanguages?: ClientCodeLanguageType[],
-    clientLevel?: ClientCodeLevelType,
+    clientLanguages: ClientCodeLanguageType[],
+    clientLevel: ClientCodeLevelType,
 };
 
 export type ClientCodeLanguageType = $Keys<typeof ClientCodeLanguage>;
 
 export class ClientCode {
     static async generate(job = CompilersJob, files: string[], options: ClientCodeOptions) {
-        const resolved = {
-            clientLanguages: (options.clientLanguages || '').split(','),
-            clientLevel: options.clientLevel || ClientCodeLevel.run,
-        };
         const generateLanguage = async (
             language: ClientCodeLanguageType,
             generator: (job: CompilersJob, options: ClientCodeOptions) => Promise<void>
         ) => {
-            if (resolved.clientLanguages.find(x => x.toLowerCase() === language.toLowerCase())) {
-                await generator.bind(ClientCode)(job, files, resolved);
+            if (options.clientLanguages.find(x => x.toLowerCase() === language.toLowerCase())) {
+                await generator.bind(ClientCode)(job, files, options);
             }
         };
 

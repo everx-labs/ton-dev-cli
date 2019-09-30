@@ -145,10 +145,9 @@ class Dev {
             });
         }
         source.networks.forEach((network) => {
-            network.setConfig({
-                ...this.compilers.getConfig(),
-                version
-            });
+            const config = network.getConfig();
+            config.version = version;
+            network.setConfig(config);
         });
         this.saveConfig();
         await this.docker.startupContainers(defs, ContainerStatus.running);
@@ -168,10 +167,10 @@ class Dev {
     }
 
     async setNetworksOptions(names: string[], options: SetNetworkOptions) {
-        const networks = names.length === 0
+        const networks: Network[] = names.length === 0
             ? this.networks
             : names.map(name => this.ensureNetwork(name));
-        const defs = this.getDefs(networks);
+        const defs = [...networks];
         await this.docker.shutdownContainers(defs, ContainerStatus.missing);
         networks.forEach(network => network.setOptions(options));
         this.saveConfig();
