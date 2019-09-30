@@ -78,6 +78,7 @@ class Dev {
             compilers: this.compilers.getConfig(),
             networks: this.networks.map(x => x.getConfig()),
         };
+        fs.mkdirSync(tonlabsHomePath(''), ({ recursive: true }: any));
         fs.writeFileSync(this.configFilePath, JSON.stringify(config), { encoding: 'utf8' });
     }
 
