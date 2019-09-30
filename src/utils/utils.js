@@ -16,9 +16,10 @@
 import { texts } from './texts';
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
-const version = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json')).toString()).version;
+const version = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'package.json')).toString()).version;
 
 function showUsage(usage: string) {
     console.log(texts.usageHeader(version));
@@ -89,86 +90,6 @@ function ensureCleanDirectory(path: string) {
         forceRmDir(path);
     }
     fs.mkdirSync(path, ({ recursive: true }: any));
-}
-
-
-export type ArgType = {
-    def: any,
-    short?: string,
-    valueCount?: number,
-}
-
-export type ArgTypes = {
-    [string]: ArgType
-}
-
-function findOptionName(arg: string, types: ArgTypes, strict: boolean) {
-    if (arg.startsWith('--')) {
-        const name = arg.substr(2);
-        const optionName = Object.keys(types).find(x => x.toLowerCase() === name.toLowerCase());
-        if (!optionName) {
-            if (!strict) {
-                return null;
-            }
-            throw texts.invalidOption(arg);
-        }
-        return optionName;
-    }
-    if (arg.startsWith('-')) {
-        const name = arg.substr(1);
-        const optionEntry = Object.entries(types).find(([_, _type]) => {
-            const type: ArgType = (_type: any);
-            return `${type.short || ''}`.toLowerCase() === name.toLowerCase();
-        });
-        if (!optionEntry) {
-            if (!strict) {
-                return null;
-            }
-            throw texts.invalidOption(arg);
-        }
-        return optionEntry[0];
-    }
-    return null;
-}
-
-
-function argsToOptions(args: string[], types: { [string]: ArgType }, strict?: boolean): any {
-    const options = {
-        files: [],
-    };
-    Object.entries(types).forEach(([name, _type]) => {
-        const type: ArgType = (_type: any);
-        if ((type.valueCount || 0) > 1) {
-            options[name] = [];
-        } else {
-            options[name] = type.def;
-        }
-    });
-    let pendingOption = null;
-    args.forEach((arg) => {
-        if (pendingOption) {
-            const type = types[pendingOption];
-            if ((type.valueCount || 0) > 1) {
-                options[pendingOption].push(arg);
-            } else {
-                options[pendingOption] = arg;
-            }
-            pendingOption = null;
-        } else {
-            const optionName = findOptionName(arg, types, strict);
-            if (optionName) {
-                const type = types[optionName];
-                if ((type.valueCount || 0) > 0) {
-                    pendingOption = optionName;
-                } else {
-                    options[optionName] = true;
-                }
-            } else {
-                options.files.push(arg);
-            }
-        }
-    });
-    return options;
 }
 
 export type PathJoin = (...items: string[]) => string;
@@ -279,6 +200,45 @@ function toIdentifier(s: string): string {
     return identifier;
 }
 
+const userIdentifier = toIdentifier(os.userInfo().username).toLowerCase();
+const tonlabsHomePath = bindPathJoinTo(path.join(os.homedir(), '.tonlabs'));
+
+function progress(info: string) {
+    process.stdout.write(`${info}...`);
+}
+
+function progressDone() {
+    console.log(' ✓');
+}
+
+export type FileArg = {
+    dir: PathJoin,
+    base: string,
+    name: string
+}
+
+function parseFileArg(fileArg: string, ext: string): FileArg {
+    if (os.platform() === 'darwin' && fileArg.startsWith('~/')) {
+        fileArg = path.join(os.homedir(), fileArg.substr(2));
+    }
+    const filePath = path.resolve(fileArg);
+    const dir = bindPathJoinTo(path.dirname(filePath));
+    const base = path.basename(filePath, ext);
+    const name = base.includes('.') ? base : `${base}${ext}`;
+    const result = {
+        dir,
+        base,
+        name
+    };
+    if (!fs.existsSync(result.dir(name))) {
+        console.error(texts.sourceFileNotFound(name));
+        process.exit(1);
+    }
+    return result;
+}
+
+
+
 export {
     version,
     showUsage,
@@ -286,10 +246,14 @@ export {
     versionToNumber,
     forceRmDir,
     ensureCleanDirectory,
-    argsToOptions,
     bindPathJoinTo,
     inputLine,
     breakWords,
     httpsGetJson,
     toIdentifier,
+    userIdentifier,
+    tonlabsHomePath,
+    progress,
+    progressDone,
+    parseFileArg,
 }

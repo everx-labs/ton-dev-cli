@@ -15,33 +15,18 @@
 // @flow
 
 import { TONClient } from "ton-client-node-js";
-import type { NetConfig } from "./config";
-import { netsFromArgsOrDefault } from "./config";
-import { texts } from "./texts";
-import { inputLine, version } from "./utils";
-
-import { IntrospectionFragmentMatcher } from 'apollo-cache-inmemory';
-import {qClientScheme} from './q-client-scheme';
+import { Dev } from "../dev";
+import { Network } from "../networks/networks";
+import { texts } from "../utils/texts";
+import { inputLine, version } from "../utils/utils";
 
 async function createClient(netAddress: string) {
-    const client = new TONClient();
-    client.config.setData({
+    return TONClient.create({
         defaultWorkchain: 0,
         servers: [],
         requestsServer: netAddress,
         queriesServer: 'http://0.0.0.0:4000/graphql'
     });
-
-
-    qClientScheme.data.__schema.types = qClientScheme.data.__schema.types.filter(type => type.possibleTypes !== null);
-    const introspectionQueryResultData = qClientScheme.data;
-    const fragmentMatcher = new IntrospectionFragmentMatcher({
-        introspectionQueryResultData
-    });
-console.log('>>>', fragmentMatcher);
-    await client.setup();
-    client.queries.client.setLocalStateFragmentMatcher(fragmentMatcher);
-    return client;
 }
 
 const transactionProjection = `
@@ -79,11 +64,11 @@ const transactionProjection = `
     }
 `;
 
-async function spy() {
+async function spy(dev: Dev, names: string[]) {
     console.log(texts.usageHeader(version));
-    await Promise.all(netsFromArgsOrDefault().map(async (net: NetConfig) => {
-        const netAddress = `http://0.0.0.0:${net.preferences.hostPort || '80'}`;
-        console.log(`Spy for ${net.preferences.name} at ${netAddress}`);
+    await Promise.all(dev.networks.map(async (net: Network) => {
+        const netAddress = `http://0.0.0.0:${net.hostPort || '80'}`;
+        console.log(`Spy for ${net.name} at ${netAddress}`);
         const localNet = await createClient(netAddress);
         const accounts = await localNet.queries.accounts.query({}, 'id', [{ path: 'id', direction: 'ASC' }], 11);
         console.log('Accounts:');

@@ -1,6 +1,3 @@
-#!/usr/bin/env node
-
-
 /*
  * Copyright 2018-2019 TON DEV SOLUTIONS LTD.
  *
@@ -16,21 +13,24 @@
  *
  */
 
-import { handleCommandLine } from "./cli/cli";
-import { Dev } from "./dev";
+import { ClientCode } from "./client-code";
+import type { ClientCodeGenerationOptions, ClientCodeLanguageType } from "./client-code";
+import { Compilers } from "./compilers";
+import { CompilersJob } from "./job";
 
-
-async function main() {
-    const dev = new Dev();
-    await handleCommandLine(dev, process.argv);
-}
-
-(async () => {
-    try {
-        await main();
-        process.exit(0);
-    } catch (error) {
-        console.error(`\n${error}`);
-        process.exit(1);
+export type BuildOptions = {
+    files: string[],
+    clientCode: {
+        [ClientCodeLanguageType]: ClientCodeGenerationOptions,
     }
-})();
+};
+
+export class LLVMC {
+    static async build(compilers: Compilers, options: BuildOptions) {
+        const job = CompilersJob.create(compilers, {
+            keepContent: false,
+        });
+
+        await ClientCode.generate(job, options.clientCode);
+    }
+}

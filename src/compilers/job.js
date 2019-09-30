@@ -12,38 +12,60 @@
  * limitations under the License.
  *
  */
-// @flow
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-import docker from "./docker";
-import {config} from "./config";
-import { ensureStartedCompilers } from "./setup";
-import { bindPathJoinTo, ensureCleanDirectory, run } from "./utils";
 
-const compilersConfig = config.compilers;
-export type CreateCompilerOptions = {
+// @flow
+
+import { Dev } from "../dev";
+import type { DockerContainer } from "../utils/docker";
+import type { PathJoin } from "../utils/utils";
+import { bindPathJoinTo, ensureCleanDirectory, run } from "../utils/utils";
+const os = require('os');
+const fs = require('fs');
+const path = require('path');
+
+export type CompilersJobOptions = {
     keepContent?: boolean,
 }
 
-async function create(options?: CreateCompilerOptions) {
-    const keepContent = options && options.keepContent || false;
-    const containerInfo = await ensureStartedCompilers();
-    const jobName = process.cwd().replace(/[\\/:]/g, '_');
-    const srcJobPath = bindPathJoinTo(path.join(compilersConfig.mountSource, jobName));
-    const dstJobPath = bindPathJoinTo(`${compilersConfig.mountDestination}/${jobName}`, '/');
+class CompilersJob {
+    dev: Dev;
+    container: DockerContainer;
+    hostPath: PathJoin;
+    guestPath: PathJoin;
 
-    if (keepContent) {
-        fs.mkdirSync(srcJobPath());
-    } else {
-        ensureCleanDirectory(srcJobPath());
+    constructor(
+        dev: Dev,
+        container: DockerContainer,
+        srcPath: PathJoin,
+        dstPath: PathJoin,
+    ) {
+        this.dev = dev;
+        this.container = container;
+        this.hostPath = srcPath;
+        this.guestPath = dstPath;
     }
 
-    const container = docker.getContainer(containerInfo.Id);
+    static async create(
+        dev: Dev,
+        options?: CompilersJobOptions
+    ) {
+        const keepContent = !!(options && options.keepContent);
+        const container = await dev.docker.ensureRunning(dev.compilers);
+        const name = process.cwd().replace(/[\\/:]/g, '_');
+        const hostPath = bindPathJoinTo(path.join(dev.compilers.mountSource, name));
+        const guestPath = bindPathJoinTo(`${dev.compilers.mountDestination}/${name}`, '/');
+        if (keepContent) {
+            fs.mkdirSync(hostPath());
+        } else {
+            ensureCleanDirectory(hostPath());
+        }
+        return new CompilersJob(dev, container, hostPath, guestPath);
+    }
 
-    async function containerRun(...args: string[]) {
+    async run(...args: string[]) {
+        const container = this.container;
         if (os.platform() === 'win32') {
-            return run('docker', 'exec', containerInfo.Id, ...args);
+            return run('docker', 'exec', container.id, ...args);
         }
         return new Promise((resolve, reject) => {
             container.exec({
@@ -84,12 +106,8 @@ async function create(options?: CreateCompilerOptions) {
         });
     }
 
-    return {
-        srcJobPath,
-        dstJobPath,
-        run: containerRun,
-    }
 }
-export default {
-    create,
+
+export {
+    CompilersJob
 }

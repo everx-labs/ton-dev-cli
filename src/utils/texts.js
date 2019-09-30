@@ -64,10 +64,10 @@ Licensed under the SOFTWARE EVALUATION License (https://www.ton.dev/licenses)
         return `Containers:`;
     },
     netHeader(name) {
-        return `${name} net:`;
+        return `${name} network/blockchain:`;
     },
     usedVersion(version) {
-        return `  Use version: ${version}`;
+        return `  Used version: ${version}`;
     },
     netHostPort(port) {
         return `  Bound to host port: ${port}`;
