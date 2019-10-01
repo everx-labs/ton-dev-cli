@@ -23,12 +23,12 @@ export type NetworkConfig = {
     name: string,
     version: string,
     hostPort: string,
-    arangoHostPort: ?string,
+    arangoHostPort: string,
 };
 
 export type SetNetworkOptions = {
     port?: string,
-    arangoPort?: string,
+    dbPort?: string,
 }
 
 class Network implements ContainerDef {
@@ -39,14 +39,14 @@ class Network implements ContainerDef {
         name: 'default',
         version: 'latest',
         hostPort: '80',
-        arangoHostPort: null,
+        arangoHostPort: '',
     });
-    static defaultArangoPort: '8529';
+    static defaultArangoPort = '8529';
 
     name: string;
     version: string;
     hostPort: string;
-    arangoHostPort: ?string;
+    arangoHostPort: string;
     requiredImage: string;
     containerName: string;
 
@@ -57,8 +57,8 @@ class Network implements ContainerDef {
     setConfig(config: NetworkConfig) {
         this.name = config.name;
         this.version = config.version;
-        this.hostPort = config.hostPort;
-        this.arangoHostPort = config.arangoHostPort;
+        this.hostPort = config.hostPort || '';
+        this.arangoHostPort = config.arangoHostPort || '';
         this.requiredImage = `${Network.imagePrefix}:${config.version}`;
         const suffix = config.name !== Network.defaultName ? `-${config.name}` : '';
         this.containerName = `${Network.containerPrefix}-${userIdentifier}${suffix}`;
@@ -82,7 +82,7 @@ class Network implements ContainerDef {
                 },
             ],
         };
-        if (this.arangoHostPort && this.arangoHostPort !== '') {
+        if (this.arangoHostPort !== '') {
             ports['8529/tcp'] = [
                 {
                     HostIp: '',
@@ -106,13 +106,13 @@ class Network implements ContainerDef {
         if (options.port) {
             config.hostPort = options.port;
         }
-        if (options.arangoPort) {
-            if (options.arangoPort === 'bind') {
+        if (options.dbPort) {
+            if (options.dbPort === 'bind') {
                 config.arangoHostPort = Network.defaultArangoPort;
-            } else if (options.arangoPort === 'unbind') {
-                config.arangoHostPort = null;
+            } else if (options.dbPort === 'unbind') {
+                config.arangoHostPort = '';
             } else {
-                config.arangoHostPort = options.arangoPort;
+                config.arangoHostPort = options.dbPort || '';
             }
         }
         this.setConfig(config);

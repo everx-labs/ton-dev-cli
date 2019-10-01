@@ -151,7 +151,7 @@ async function handleCommandLine(dev: Dev, args: string[]) {
     program
         .command('set [network...]').description('Set network[s] options')
         .option('-p, --port <port>', 'host port to bound local node')
-        .option('-d, --db-port <binding>', 'host port to bound local nodes DB ("bind" to use default DB port, "unbind" to unbind DB port)')
+        .option('-d, --db-port <binding>', 'host port to bound local nodes Arango DB ("bind" to use default Arango DB port, "unbind" to unbind Arango DB port)')
         .action(command(setCommand));
 
     program
