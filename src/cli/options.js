@@ -39,18 +39,15 @@ export type RestartOptions = CompilersWithNetworksOptions;
 export type RecreateOptions = CompilersWithNetworksOptions;
 export type CleanOptions = CompilersWithNetworksOptions;
 export type UseOptions = CompilersWithNetworksOptions;
+export type SetNetworkOptions = {
+    newName?: string;
+    port?: string,
+    dbPort?: string,
+}
 
 export type SolOptions = {
     clientLanguages?: string,
     clientLevel?: string,
-}
-
-function requiredNetwork(dev: Dev, name: string): Network {
-    const network = dev.networks.find(x => x.name.toLowerCase() === name.toLowerCase());
-    if (!network) {
-        throw new Error(`Network not found: ${name}`)
-    }
-    return network;
 }
 
 function findNetworks(dev: Dev, options: NetworksOptions): ?(Network[]) {
@@ -61,7 +58,7 @@ function findNetworks(dev: Dev, options: NetworksOptions): ?(Network[]) {
     if (typeof names === 'boolean') {
         return dev.networks;
     }
-    return names.split(',').map(name => requiredNetwork(dev, name.trim()));
+    return dev.networksFromNames(names.split(','));
 }
 
 export function compilersWithNetworks(
@@ -79,13 +76,5 @@ export function compilersWithNetworks(
         compilers,
         networks: networks || []
     };
-}
-
-export function networksOrDefault(dev: Dev, options: NetworksOptions): Network[] {
-    return findNetworks(dev, options) || [requiredNetwork(dev, Network.defaultName)];
-}
-
-export function networksOrAll(dev: Dev, options: NetworksOptions): Network[] {
-    return findNetworks(dev, options) || dev.networks;
 }
 

@@ -17,12 +17,13 @@
 import { ClientCodeLevel } from "../compilers/client-code";
 import { Solidity } from "../compilers/solidity";
 import { Dev } from "../dev";
-import type { SetNetworkOptions } from "../networks/networks";
-import { compilersWithNetworks } from "./options";
+import { Network } from "../networks/networks";
+import type { NetworkConfig } from "../networks/networks";
+import { compilersWithNetworks, requiredNetworks } from "./options";
 import type {
     CleanOptions,
     RecreateOptions,
-    RestartOptions,
+    RestartOptions, SetNetworkOptions,
     SetupOptions, SolOptions,
     StartOptions,
     StopOptions,
@@ -61,7 +62,31 @@ async function cleanCommand(dev: Dev, options: CleanOptions) {
 }
 
 async function setCommand(dev: Dev, names: string[], options: SetNetworkOptions) {
-    await dev.setNetworksOptions(names, options);
+    await dev.updateNetworkConfigs(dev.networksOrAll(names), (config: NetworkConfig) => {
+        if (options.newName) {
+            config.name = options.newName;
+        }
+        if (options.port) {
+            config.hostPort = options.port;
+        }
+        if (options.dbPort) {
+            if (options.dbPort === 'bind') {
+                config.arangoHostPort = Network.defaultArangoPort;
+            } else if (options.dbPort === 'unbind') {
+                config.arangoHostPort = '';
+            } else {
+                config.arangoHostPort = options.dbPort || '';
+            }
+        }
+    });
+}
+
+async function addCommand(dev: Dev, names: string[]) {
+    await dev.addNetworks(names);
+}
+
+async function removeCommand(dev: Dev, names: string[]) {
+    await dev.removeNetworks(dev.networksFromNames(names));
 }
 
 async function useCommand(dev: Dev, version: string, options: UseOptions) {
@@ -152,7 +177,16 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .command('set [network...]').description('Set network[s] options')
         .option('-p, --port <port>', 'host port to bound local node')
         .option('-d, --db-port <binding>', 'host port to bound local nodes Arango DB ("bind" to use default Arango DB port, "unbind" to unbind Arango DB port)')
+        .option('-n, --new-name <name>', 'set new name for network')
         .action(command(setCommand));
+
+    program
+        .command('add [network...]').description('Add network[s]')
+        .action(command(addCommand));
+
+    program
+        .command('remove [network...]').alias('rm').description('Remove network[s]')
+        .action(command(removeCommand));
 
     program
         .command('sol [files...]').description('Build solidity contract[s]')

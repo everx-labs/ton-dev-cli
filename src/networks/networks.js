@@ -26,11 +26,6 @@ export type NetworkConfig = {
     arangoHostPort: string,
 };
 
-export type SetNetworkOptions = {
-    port?: string,
-    dbPort?: string,
-}
-
 class Network implements ContainerDef {
     static imagePrefix = 'tonlabs/local-node';
     static containerPrefix = 'tonlabs-local-node';
@@ -99,23 +94,6 @@ class Network implements ContainerDef {
                 PortBindings: ports,
             },
         });
-    }
-
-    setOptions(options: SetNetworkOptions) {
-        const config = this.getConfig();
-        if (options.port) {
-            config.hostPort = options.port;
-        }
-        if (options.dbPort) {
-            if (options.dbPort === 'bind') {
-                config.arangoHostPort = Network.defaultArangoPort;
-            } else if (options.dbPort === 'unbind') {
-                config.arangoHostPort = '';
-            } else {
-                config.arangoHostPort = options.dbPort || '';
-            }
-        }
-        this.setConfig(config);
     }
 }
 

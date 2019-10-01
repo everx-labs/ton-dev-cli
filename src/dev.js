@@ -14,6 +14,7 @@
  */
 // @flow
 
+import { requiredNetworks } from "./cli/options";
 import { Compilers } from "./compilers/compilers";
 import type { CompilersConfig } from "./compilers/compilers";
 import type { NetworkConfig, SetNetworkOptions } from "./networks/networks";
@@ -106,6 +107,20 @@ class Dev {
         this.agreementRequired = false;
     };
 
+    networksFromNames(names: string[]): Network[] {
+        return names.map((name) => {
+            const network = this.networks.find(x => x.name.toLowerCase() === name.toLowerCase());
+            if (!network) {
+                throw new Error(`Network not found: ${name}`)
+            }
+            return network;
+        });
+    }
+
+    networksOrAll(names: string[]): Network[] {
+        return names.length > 0 ? this.networksFromNames(names) : this.networks;
+    }
+
     getDefs(source: CompilersWithNetworks): ContainerDef[] {
         return source.compilers ? source.networks.concat(this.compilers) : [...source.networks];
     }
@@ -167,13 +182,49 @@ class Dev {
         return network;
     }
 
-    async setNetworksOptions(names: string[], options: SetNetworkOptions) {
-        const networks: Network[] = names.length === 0
-            ? this.networks
-            : names.map(name => this.ensureNetwork(name));
+    checkUniqueName(name: string) {
+        if (this.networks.find(x => x.name.toLowerCase() === name.toLowerCase())) {
+            throw new Error(`Network with name [${name}] already exists`);
+        }
+    }
+
+    addNetworks(names: string[]) {
+        names.forEach((name) => {
+            this.checkUniqueName(name);
+            const network = new Network({
+                ...Network.defaultConfig,
+                name
+            });
+            this.networks.push(network);
+        });
+        this.saveConfig();
+    }
+
+
+    async removeNetworks(networks: Network[]) {
+        await this.docker.shutdownContainers(networks, ContainerStatus.missing);
+        networks.forEach((network) => {
+            const index = this.networks.findIndex(x => x === network);
+            if (index >= 0) {
+                this.networks.splice(index, 1);
+            }
+        });
+        this.saveConfig();
+    }
+
+
+    async updateNetworkConfigs(networks: Network[], update: (config: NetworkConfig) => void) {
         const defs = [...networks];
         await this.docker.shutdownContainers(defs, ContainerStatus.missing);
-        networks.forEach(network => network.setOptions(options));
+        networks.forEach((network) => {
+            const config = network.getConfig();
+            const saveName = config.name;
+            update(config);
+            if (config.name.toLowerCase() !== saveName.toLowerCase()) {
+                this.checkUniqueName(config.name);
+            }
+            network.setConfig(config)
+        });
         this.saveConfig();
         await this.docker.startupContainers(defs, ContainerStatus.running);
     }
