@@ -243,7 +243,7 @@ class DevDocker {
     }
 
     async ensureImage(def: ContainerDef) {
-        if (!this.findImageInfo(def.requiredImage)) {
+        if (!(await this.findImageInfo(def.requiredImage))) {
             progress(`Pulling ${def.containerName}`);
             await this.pull(def.requiredImage);
             progressDone();

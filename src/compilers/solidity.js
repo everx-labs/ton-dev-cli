@@ -110,7 +110,7 @@ export class Solidity {
                 fs.copyFileSync(this.job.hostPath(name.abi), dir(name.abi));
             } else {
                 console.log(linkerResult);
-                process.exit()
+                process.exit(1)
             }
         });
     }
