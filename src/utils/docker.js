@@ -269,13 +269,13 @@ class DevDocker {
         }
     }
 
-    async shutdownContainers(defs: ContainerDef[], downTo: ContainerStatusType) {
+    async shutdownContainers(defs: $ReadOnlyArray<ContainerDef>, downTo: ContainerStatusType) {
         for (let i = 0; i < defs.length; i += 1) {
             await this.shutdownContainer(defs[i], downTo);
         }
     }
 
-    async startupContainers(defs: ContainerDef[], upTo: ContainerStatusType) {
+    async startupContainers(defs: $ReadOnlyArray<ContainerDef>, upTo: ContainerStatusType) {
         for (let i = 0; i < defs.length; i += 1) {
             await this.startupContainer(defs[i], upTo);
         }

@@ -14,10 +14,9 @@
  */
 // @flow
 
-import { requiredNetworks } from "./cli/options";
 import { Compilers } from "./compilers/compilers";
 import type { CompilersConfig } from "./compilers/compilers";
-import type { NetworkConfig, SetNetworkOptions } from "./networks/networks";
+import type { NetworkConfig } from "./networks/networks";
 import { Network } from "./networks/networks";
 import type { ContainerDef, DContainerInfo, DImageInfo } from "./utils/docker";
 import { ContainerStatus, DevDocker } from "./utils/docker";
