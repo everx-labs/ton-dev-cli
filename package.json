@@ -1,6 +1,6 @@
 {
 	"name": "ton-dev-cli",
-	"version": "0.12.0",
+	"version": "0.12.1",
 	"keywords": [
 		"TON",
 		"Javascript",
@@ -28,8 +28,6 @@
 	"dependencies": {
 		"dockerode": "^2.5.8",
 		"@babel/runtime": "^7.6.0",
-		"ton-client-node-js": "^0.12.1",
-		"ton-client-js": "^0.12.1",
 		"commander": "latest"
 	},
 	"devDependencies": {

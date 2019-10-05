@@ -194,9 +194,9 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .option('-L, --client-level <client-level>', 'client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of binary contract)')
         .action(command(solCommand));
 
-    program
-        .command('spy [networks...]').description('Run network scanner')
-        .action(command(spyCommand));
+    // program
+    //     .command('spy [networks...]').description('Run network scanner')
+    //     .action(command(spyCommand));
 
     // .command('update', `update ${dev.name} docker images`).action(action)
 
