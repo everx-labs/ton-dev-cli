@@ -14,7 +14,7 @@
  */
 // @flow
 
-import { TONClient } from "ton-client-node-js";
+//TODO: import { TONClient } from "ton-client-node-js";
 import { Dev } from "../dev";
 import { Network } from "../networks/networks";
 import { texts } from "../utils/texts";
