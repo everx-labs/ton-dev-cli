@@ -22,10 +22,7 @@ import { inputLine, version } from "../utils/utils";
 
 async function createClient(netAddress: string) {
     return TONClient.create({
-        defaultWorkchain: 0,
-        servers: [],
-        requestsServer: netAddress,
-        queriesServer: 'http://0.0.0.0:4000/graphql'
+        servers: [netAddress]
     });
 }
 
