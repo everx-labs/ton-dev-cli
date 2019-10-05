@@ -1,6 +1,6 @@
 {
 	"name": "ton-dev-cli",
-	"version": "0.11.8",
+	"version": "0.12.0",
 	"keywords": [
 		"TON",
 		"Javascript",
@@ -18,16 +18,19 @@
 		"babel": "babel src --out-dir dist --source-maps inline",
 		"flow": "flow",
 		"test": "jest",
-		"tondo": "node ./dist/index.js",
+		"ton": "node ./dist/index.js",
 		"npm install": "npm install"
 	},
 	"bin": {
 		"tondev": "./dist/index.js",
-		"tondo": "./dist/index.js"
+		"ton": "./dist/index.js"
 	},
 	"dependencies": {
 		"dockerode": "^2.5.8",
-		"@babel/runtime": "^7.6.0"
+		"@babel/runtime": "^7.6.0",
+		"ton-client-node-js": "^0.12.1",
+		"ton-client-js": "^0.12.1",
+		"commander": "latest"
 	},
 	"devDependencies": {
 		"@babel/cli": "^7.6.0",
@@ -56,7 +59,6 @@
 		"@babel/plugin-transform-runtime": "^7.6.0",
 		"@babel/preset-env": "^7.6.0",
 		"@babel/preset-flow": "^7.0.0",
-		"@babel/runtime": "^7.6.0",
 		"babel-eslint": "^10.0.3",
 		"eslint": "^6.3.0",
 		"eslint-plugin-import": "^2.18.2",

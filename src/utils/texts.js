@@ -8,9 +8,9 @@ or, if earlier, when you use any of the TON DEV Software: `,
     noTonDevImages: 'There are no TON Dev Images',
     noTonDevContainers: 'There are no TON Dev Containers',
     done: ' Done.',
-    availableVersions(versions) {
-        return `Available versions: ${versions}`;
-    },
+    netsHeader: 'Local nets:',
+    compilerHeader: 'Compilers:',
+    availableVersions: 'Available versions:',
     containerDoesNotExists(name) {
         return `Container [${name}] does not exists. Creating...`;
     },
@@ -27,7 +27,7 @@ or, if earlier, when you use any of the TON DEV Software: `,
         return `Image [${id} have been removed.`;
     },
     sourceFileNotFound(name) {
-        return `Source file [${name.sol}] not found.`;
+        return `Source file [${name}] not found.`;
     },
     usageHeader(version) {
         return `TON Labs Dev Tools ${version}`;
@@ -35,43 +35,25 @@ or, if earlier, when you use any of the TON DEV Software: `,
     invalidOption(arg) {
         return `Invalid option: ${arg}`;
     },
-    usage: `Use: tondev command { argument ... }
+    usage: `usage: tondev command { argument ... }
 
+Options:
+  -p, --port <number>   Set local port number for local net
+  -n, --net <name>      Set local net name to which command applied, can be specified multiple times
+  -i, --images          Apply command only to docker images
+  -c, --containers      Apply command only to docker containers
+  -js, --JavaScript     Generate additional JavaScript code
+  
+   
 Commands:
-
-setup [ -p <number> ]
-    Looking for a required prerequisites and setup required TON Labs Dev Tools.
-    Options:
-    --port <number> or -p <number>
-        Set local port number for local node. Default is 80.       
-    
-start
-    Start local node.
-     
-stop
-    Stop all TON Dev docker containers.
-     
-clean [ -i ] [-c]
-    Remove all TON Dev docker containers and images.
-    Options (-i and -c are mutually exclusive):
-    --images or -i
-        Remove only images.
-    --containers or -c
-        Remove only containers.
-    
-info
-    Show current status of TON Dev images and containers.
-
-use <version>
-    Select version for local-node and compilers. 
+  sol <files>   Build TON contract from solidity source code
+  start         Start local net (if net name does not specified the all nets will be started)
+  stop          Stop compilers and all nets    
+  info          Show current status of compilers and nets
+  setup         Looking for a required prerequisites and setup required additional components
+  clean         Remove all TON Dev docker containers and images
+  use <version> Select version for compilers and nets 
         
-sol <solidity-file-without-extension> [ -js ]
-    Build TON contract from solidity source code.
-    Options:
-    --javascript or -js
-        Generate JavaScript file with contract package (imageBase64 and ABI).
-        
-
 Copyright 2018-2019 TON DEV SOLUTIONS LTD.
 Licensed under the SOFTWARE EVALUATION License (https://www.ton.dev/licenses)
 `,
@@ -81,12 +63,18 @@ Licensed under the SOFTWARE EVALUATION License (https://www.ton.dev/licenses)
     tonDevContainers() {
         return `Containers:`;
     },
-    usedVersion(version) {
-        return `Used version: ${version}`;
+    netHeader(name) {
+        return `${name} network/blockchain:`;
     },
-    localNodeBoundToPort(port) {
-        return `Local Node is bound to port: ${port}`;
-    }
+    usedVersion(version) {
+        return `  Used version: ${version}`;
+    },
+    netHostPort(port) {
+        return `  Bound to host port: ${port}`;
+    },
+    netArangoHostPort(port) {
+        return `  Arango DB is bound to host port: ${port}`;
+    },
 };
 
 export { texts };
