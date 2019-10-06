@@ -79,6 +79,8 @@ class ${className} {
         this.client = client;
         this.address = address;
         this.keys = keys;
+        this.package = pkg;
+        this.abi = abi;
     }
 
     async deploy(constructorParams) {
@@ -94,6 +96,17 @@ class ${className} {
         
     async run(functionName, input) {
         const result = await this.client.contracts.run({
+            address: this.address,
+            functionName,
+            abi,
+            input,
+            keyPair: this.keys,
+        });
+        return result.output;
+    }    
+
+    async runLocal(functionName, input) {
+        const result = await this.client.contracts.runLocal({
             address: this.address,
             functionName,
             abi,
