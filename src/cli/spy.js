@@ -21,9 +21,10 @@ import { texts } from "../utils/texts";
 import { inputLine, version } from "../utils/utils";
 
 async function createClient(netAddress: string) {
-    return TONClient.create({
-        servers: [netAddress]
-    });
+    return {};
+    //TODO: return TONClient.create({
+    //     servers: [netAddress]
+    // });
 }
 
 const transactionProjection = `

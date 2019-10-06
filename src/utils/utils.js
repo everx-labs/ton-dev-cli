@@ -203,12 +203,24 @@ function toIdentifier(s: string): string {
 const userIdentifier = toIdentifier(os.userInfo().username).toLowerCase();
 const tonlabsHomePath = bindPathJoinTo(path.join(os.homedir(), '.tonlabs'));
 
+let _progressLine: string = '';
+
+function progressLine(line: string) {
+    process.stdout.write(`\r${line}`);
+    const extra = _progressLine.length - line.length;
+    if (extra > 0) {
+        process.stdout.write(' '.repeat(extra) + '\b'.repeat(extra));
+    }
+    _progressLine = line;
+}
+
 function progress(info: string) {
-    process.stdout.write(`${info}...`);
+    progressLine(`${info}...`);
 }
 
 function progressDone() {
     console.log(' ✓');
+    _progressLine = '';
 }
 
 export type FileArg = {
@@ -254,6 +266,7 @@ export {
     userIdentifier,
     tonlabsHomePath,
     progress,
+    progressLine,
     progressDone,
     parseFileArg,
 }

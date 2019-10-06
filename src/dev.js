@@ -145,9 +145,15 @@ class Dev {
     }
 
 
-    async clean(source: CompilersWithNetworks) {
-        const defs = this.getDefs(source);
-        await this.docker.shutdownContainers(defs, ContainerStatus.missing);
+    async clean(compilers: boolean, networks: boolean) {
+        const imageMatches = [];
+        if (compilers) {
+            imageMatches.push(Compilers.imagePrefix);
+        }
+        if (networks) {
+            imageMatches.push(Network.imagePrefix);
+        }
+        await this.docker.removeImages(imageMatches);
     }
 
     async useVersion(version: string, source: CompilersWithNetworks) {
@@ -229,13 +235,13 @@ class Dev {
     }
 
     static isDevContainer(info: DContainerInfo): boolean {
-        return DevDocker.containerBelongsToImage(info, Compilers.imagePrefix)
-            || DevDocker.containerBelongsToImage(info, Network.imagePrefix);
+        return DevDocker.containersImageMatched(info, Compilers.imagePrefix)
+            || DevDocker.containersImageMatched(info, Network.imagePrefix);
     }
 
     static isDevImage(info: DImageInfo): boolean {
-        return DevDocker.imageHasRepoTag(info, Compilers.imagePrefix)
-            || DevDocker.imageHasRepoTag(info, Network.imagePrefix);
+        return DevDocker.imageHasMatchedName(info, Compilers.imagePrefix)
+            || DevDocker.imageHasMatchedName(info, Network.imagePrefix);
     }
 }
 

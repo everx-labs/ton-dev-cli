@@ -58,7 +58,8 @@ async function recreateCommand(dev: Dev, options: RecreateOptions) {
 }
 
 async function cleanCommand(dev: Dev, options: CleanOptions) {
-    await dev.clean(compilersWithNetworks(dev, options));
+    const all = !options.compilers && !options.networks;
+    await dev.clean(options.compilers || all, options.networks || all);
 }
 
 async function setCommand(dev: Dev, names: string[], options: SetNetworkOptions) {
@@ -162,9 +163,9 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .action(command(recreateCommand));
 
     program
-        .command('clean').description('Remove dev containers and images')
-        .option(...sharedOptions.n)
-        .option(...sharedOptions.m)
+        .command('clean').description('Remove docker containers and images related to TON Dev')
+        .option('-n, --networks', 'clean compilers docker containers and images')
+        .option('-m, --compilers', 'clean local node docker containers and images')
         .action(command(cleanCommand));
 
     program

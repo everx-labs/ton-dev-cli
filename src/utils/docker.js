@@ -15,11 +15,12 @@
 // @flow
 import Docker from 'dockerode';
 
-import { progress, progressDone, versionToNumber } from "./utils";
+import {progress, progressDone, progressLine, versionToNumber} from "./utils";
 
 export type DImageInfo = {
     Id: string,
     RepoTags: string[],
+    RepoDigests: string[],
 }
 
 export type DContainerInfo = {
@@ -47,13 +48,13 @@ export type DockerModem = {
     followProgress(
         stream: any,
         onFinished: (err: any, output: any) => void,
-        onProgress: (event: any) => void
+        onProgress: (event: any) => void,
     ): void,
 
     demuxStream(
         stream: any,
         stdout: any,
-        stderr: any
+        stderr: any,
     ): void,
 }
 
@@ -132,6 +133,7 @@ export type ContainerStatusType = 0 | 1 | 2;
 export interface ContainerDef {
     requiredImage: string,
     containerName: string,
+
     createContainer(docker: DevDocker): Promise<DockerContainer>
 }
 
@@ -158,9 +160,9 @@ class DevDocker {
         this._containers = null;
     }
 
-    async getImages(): Promise<DImageInfo[]> {
+    async getImageInfos(): Promise<DImageInfo[]> {
         if (!this._images) {
-            const images = await this.client.listImages({ all: true });
+            const images = await this.client.listImages({all: true});
             this._images = images;
             if (!this._onStartupImagesPassed) {
                 this._onStartupImagesPassed = true;
@@ -173,9 +175,9 @@ class DevDocker {
         return this._images || [];
     }
 
-    async getContainers(): Promise<DContainerInfo[]> {
+    async getContainerInfos(): Promise<DContainerInfo[]> {
         if (!this._containers) {
-            this._containers = await this.client.listContainers({ all: true });
+            this._containers = await this.client.listContainers({all: true});
         }
         return this._containers || [];
     }
@@ -185,12 +187,40 @@ class DevDocker {
         return versionToNumber(version.Version);
     }
 
+    async removeImages(nameMatches: string[]): Promise<void> {
+        // Stop and remove containers that belongs to images
+        const containerInfos = (await this.getContainerInfos()).filter((info) => {
+            return nameMatches.find(match => DevDocker.containersImageMatched(info, match));
+        });
+        for (let i = 0; i < containerInfos.length; i += 1) {
+            const info = containerInfos[i];
+            progress(`Removing container [${DevDocker.containerTitle(info)}]`);
+            const container = this.client.getContainer(info.Id);
+            await container.stop();
+            await container.remove();
+            progressDone();
+        }
+        // Remove images
+        const imageInfos = (await this.getImageInfos()).filter((info) => {
+            return nameMatches.find(match => DevDocker.imageHasMatchedName(info, match));
+        });
+        for (let i = 0; i < imageInfos.length; i += 1) {
+            const info = imageInfos[i];
+            progress(`Removing image [${DevDocker.imageTitle(info)}]`);
+            const image = this.client.getImage(info.Id);
+            await image.remove();
+            progressDone();
+        }
+    }
+
     async pull(repoTag: string): Promise<DockerImage> {
         if (this.onBeforePull) {
             await this.onBeforePull(repoTag);
         }
         const client = this.client;
-        return new Promise((resolve, reject) => {
+        const title = `Pulling [${repoTag}]`;
+        progress(title);
+        const image = await new Promise((resolve, reject) => {
             client.pull(repoTag, {}, function (err, stream) {
                 if (!stream) {
                     reject(err);
@@ -203,24 +233,22 @@ class DevDocker {
                     resolve(output);
                 }
 
-                function onProgress(_event) {
-                    const isTimeToReport = Date.now() > lastReportTime + 1000;
-                    if (isTimeToReport) {
-                        lastReportTime = Date.now();
-                        process.stdout.write('.');
-                    }
+                function onProgress(event) {
+                    progressLine(`${title}... ${event.progress || ''}`);
                 }
             });
-
-        })
+        });
+        progress(title);
+        progressDone();
+        return image;
     }
 
     async findImageInfo(name: string): Promise<?DImageInfo> {
-        return (await this.getImages()).find(x => DevDocker.imageHasRepoTag(x, name)) || null;
+        return (await this.getImageInfos()).find(x => DevDocker.imageHasMatchedName(x, name)) || null;
     }
 
     async findContainerInfo(name: string): Promise<?DContainerInfo> {
-        return (await this.getContainers()).find(x => DevDocker.hasName(x, name)) || null;
+        return (await this.getContainerInfos()).find(x => DevDocker.hasName(x, name)) || null;
     }
 
     async shutdownContainer(def: ContainerDef, downTo: ContainerStatusType) {
@@ -229,13 +257,13 @@ class DevDocker {
             return;
         }
         if (DevDocker.isRunning(info) && downTo < ContainerStatus.running) {
-            progress(`Stopping ${def.containerName}`);
+            progress(`Stopping [${def.containerName}]`);
             await this.client.getContainer(info.Id).stop();
             progressDone();
             this.dropCache();
         }
         if (downTo < ContainerStatus.created) {
-            progress(`Removing ${def.containerName}`);
+            progress(`Removing [${def.containerName}]`);
             await this.client.getContainer(info.Id).remove();
             progressDone();
             this.dropCache();
@@ -244,9 +272,7 @@ class DevDocker {
 
     async ensureImage(def: ContainerDef) {
         if (!(await this.findImageInfo(def.requiredImage))) {
-            progress(`Pulling ${def.containerName}`);
             await this.pull(def.requiredImage);
-            progressDone();
             this.dropCache();
         }
     }
@@ -292,31 +318,50 @@ class DevDocker {
         return !!(container.Names || []).find(n => n.toLowerCase() === nameToFind);
     }
 
-    static imageMatched(image: string, tag: string): boolean {
-        image = image.toLowerCase();
-        tag = tag.toLowerCase();
-        const tagParts = tag.split(':');
-        if (tagParts.length > 1) {
-            return image === tag;
-        }
-        const imageParts = image.split(':');
-        return imageParts[0] === tagParts[0];
+    static imageTitle(info: DImageInfo): string {
+        return DevDocker.imageNames(info)[0] || info.Id;
     }
 
-    static imageHasRepoTag(info: DImageInfo, tag: string): boolean {
-        return !!(info.RepoTags || []).find(n => this.imageMatched(n, tag));
+    static containerTitle(info: DContainerInfo): string {
+        return info.Names.map(name => name.startsWith('/') ? name.substr(1) : name).join(';');
+    }
+
+    // if match specified with tag compare exactly
+    // if match specified without tag compare untagged names
+    static imageNameMatched(imageName: string, match: string): boolean {
+        imageName = imageName.toLowerCase();
+        match = match.toLowerCase();
+        const matchParts = match.split(':');
+        if (matchParts.length > 1) {
+            return imageName === match;
+        }
+        const imageParts = imageName.split(':');
+        return imageParts[0] === matchParts[0];
+    }
+
+    static imageNames(info: DImageInfo): string[] {
+        return [
+            ...(info.RepoTags || []),
+            ...(info.RepoDigests || []).map((digest) => {
+                return digest.split('@').join(':');
+            }),
+        ];
+    }
+
+    static imageHasMatchedName(info: DImageInfo, match: string): boolean {
+        return !!DevDocker.imageNames(info).find(name => this.imageNameMatched(name, match));
     }
 
     static isRunning(info: ?DContainerInfo): boolean {
         return !!info && info.State.toLowerCase() === 'running';
     }
 
-    static containerBelongsToImage(info: DContainerInfo, image: string): boolean {
-        return this.imageMatched(info.Image, image);
+    static containersImageMatched(info: DContainerInfo, match: string): boolean {
+        return this.imageNameMatched(info.Image, match);
     }
 }
 
 
 export {
-    DevDocker
+    DevDocker,
 }

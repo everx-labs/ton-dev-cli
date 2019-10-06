@@ -37,7 +37,11 @@ export type StartOptions = CompilersWithNetworksOptions;
 export type StopOptions = CompilersWithNetworksOptions;
 export type RestartOptions = CompilersWithNetworksOptions;
 export type RecreateOptions = CompilersWithNetworksOptions;
-export type CleanOptions = CompilersWithNetworksOptions;
+export type CleanOptions = {
+    networks: boolean,
+    compilers: boolean,
+}
+
 export type UseOptions = CompilersWithNetworksOptions;
 export type SetNetworkOptions = {
     newName?: string;
