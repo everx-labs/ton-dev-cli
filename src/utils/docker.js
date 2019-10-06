@@ -196,7 +196,9 @@ class DevDocker {
             const info = containerInfos[i];
             progress(`Removing container [${DevDocker.containerTitle(info)}]`);
             const container = this.client.getContainer(info.Id);
-            await container.stop();
+            if (DevDocker.isRunning(info)) {
+                await container.stop();
+            }
             await container.remove();
             progressDone();
         }
