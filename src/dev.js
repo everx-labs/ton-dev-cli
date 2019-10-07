@@ -145,7 +145,7 @@ class Dev {
     }
 
 
-    async clean(compilers: boolean, networks: boolean) {
+    async clean(compilers: boolean, networks: boolean, containersOnly: boolean) {
         const imageMatches = [];
         if (compilers) {
             imageMatches.push(Compilers.imagePrefix);
@@ -153,7 +153,7 @@ class Dev {
         if (networks) {
             imageMatches.push(Network.imagePrefix);
         }
-        await this.docker.removeImages(imageMatches);
+        await this.docker.removeImages(imageMatches, containersOnly);
     }
 
     async useVersion(version: string, source: CompilersWithNetworks) {

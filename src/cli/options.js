@@ -40,6 +40,7 @@ export type RecreateOptions = CompilersWithNetworksOptions;
 export type CleanOptions = {
     networks: boolean,
     compilers: boolean,
+    containers: boolean,
 }
 
 export type UseOptions = CompilersWithNetworksOptions;

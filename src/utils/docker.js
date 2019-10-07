@@ -187,7 +187,7 @@ class DevDocker {
         return versionToNumber(version.Version);
     }
 
-    async removeImages(nameMatches: string[]): Promise<void> {
+    async removeImages(nameMatches: string[], containersOnly: boolean): Promise<void> {
         // Stop and remove containers that belongs to images
         const containerInfos = (await this.getContainerInfos()).filter((info) => {
             return nameMatches.find(match => DevDocker.containersImageMatched(info, match));
@@ -201,6 +201,9 @@ class DevDocker {
             }
             await container.remove();
             progressDone();
+        }
+        if(containersOnly) {
+            return;
         }
         // Remove images
         const imageInfos = (await this.getImageInfos()).filter((info) => {
