@@ -192,8 +192,15 @@ async function handleCommandLine(dev: Dev, args: string[]) {
 
     program
         .command('sol [files...]').description('Build solidity contract[s]')
-        .option('-l, --client-languages <languages>', 'generate client code for languages: "js", "rs" (multiple languages must be separated with comma)')
-        .option('-L, --client-level <client-level>', 'client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of binary contract)')
+        .option(
+            '-l, --client-languages <languages>',
+            'generate client code for languages: "js", "rs" (multiple languages must be separated with comma)'
+        )
+        .option(
+            '-L, --client-level <client-level>',
+            'client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of binary contract)',
+            'deploy'
+        )
         .action(command(solCommand));
 
     // program

@@ -15,6 +15,7 @@
 
 import { parseFileArg } from "../utils/utils";
 import { CompilersJob } from "./job";
+
 const fs = require('fs');
 
 export const ClientCodeLevel = {
@@ -55,34 +56,15 @@ export class ClientCode {
 
     static async generateJavaScript(job: CompilersJob, files: string[], options: ClientCodeOptions) {
         files.forEach((file) => {
-            const {dir, base} = parseFileArg(file, '.sol');
+            const { dir, base } = parseFileArg(file, '.sol');
             const imageBase64 = options.clientLevel === ClientCodeLevel.deploy
                 ? fs.readFileSync(dir(`${base}.tvc`)).toString('base64')
                 : '';
             const abi = fs.readFileSync(dir(`${base}.abi.json`)).toString().trimRight();
             const className = `${base[0].toUpperCase()}${base.substr(1)}Contract`;
-            const js =
+            const isDeploy = (options.clientLevel || 'deploy') === 'deploy';
+            const deployMethod = isDeploy ?
 `
-//
-// This file was generated using TON Labs developer tools.
-//
- 
-const abi = ${abi};
-
-const pkg = {
-    abi,
-    imageBase64: '${imageBase64}'
-};
-
-class ${className} {
-    constructor(client, address, keys) {
-        this.client = client;
-        this.address = address;
-        this.keys = keys;
-        this.package = pkg;
-        this.abi = abi;
-    }
-
     async deploy(constructorParams) {
         if (!this.keys) {
             this.keys = await this.client.crypto.ed25519Keypair();
@@ -93,7 +75,30 @@ class ${className} {
             keyPair: this.keys,
         })).address;
     }
-        
+` : '';
+
+            const js =
+                `
+//
+// This file was generated using TON Labs developer tools.
+//
+ 
+const abi = ${abi};
+
+const pkg = {
+    abi,
+    imageBase64: '${imageBase64}',
+};
+
+class ${className} {
+    constructor(client, address, keys) {
+        this.client = client;
+        this.address = address;
+        this.keys = keys;
+        this.package = pkg;
+        this.abi = abi;
+    }
+${deployMethod}   
     async run(functionName, input) {
         const result = await this.client.contracts.run({
             address: this.address,
