@@ -14,12 +14,13 @@
  */
 // @flow
 
+import { TONClient } from "ton-client-node-js";
 import { ClientCodeLevel } from "../compilers/client-code";
 import { Solidity } from "../compilers/solidity";
 import { Dev } from "../dev";
 import { Network } from "../networks/networks";
 import type { NetworkConfig } from "../networks/networks";
-import { compilersWithNetworks, requiredNetworks } from "./options";
+import { compilersWithNetworks } from "./options";
 import type {
     CleanOptions,
     RecreateOptions,
@@ -90,6 +91,14 @@ async function removeCommand(dev: Dev, names: string[]) {
     await dev.removeNetworks(dev.networksFromNames(names));
 }
 
+async function generateKeysCommand(_dev: Dev) {
+    const client = await TONClient.create({
+        servers: ['http://localhost']
+    });
+    const keys = await client.crypto.ed25519Keypair();
+    console.log(keys);
+}
+
 async function useCommand(dev: Dev, version: string, options: UseOptions) {
     await dev.useVersion(version, compilersWithNetworks(dev, options));
 }
@@ -133,10 +142,17 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .action(command(infoCommand));
 
     program
-        .command('setup').description('Setup dev environment')
-        .option(...sharedOptions.n)
-        .option(...sharedOptions.m)
-        .action(command(setupCommand));
+        .command('sol [files...]').description('Build solidity contract[s]')
+        .option(
+            '-l, --client-languages <languages>',
+            'generate client code for languages: "js", "rs" (multiple languages must be separated with comma)'
+        )
+        .option(
+            '-L, --client-level <client-level>',
+            'client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of binary contract)',
+            'deploy'
+        )
+        .action(command(solCommand));
 
     program
         .command('start').description('Start dev containers')
@@ -161,6 +177,12 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .option(...sharedOptions.n)
         .option(...sharedOptions.m)
         .action(command(recreateCommand));
+
+    program
+        .command('setup').description('Setup dev environment')
+        .option(...sharedOptions.n)
+        .option(...sharedOptions.m)
+        .action(command(setupCommand));
 
     program
         .command('clean').description('Remove docker containers and images related to TON Dev')
@@ -191,21 +213,12 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .action(command(removeCommand));
 
     program
-        .command('sol [files...]').description('Build solidity contract[s]')
-        .option(
-            '-l, --client-languages <languages>',
-            'generate client code for languages: "js", "rs" (multiple languages must be separated with comma)'
-        )
-        .option(
-            '-L, --client-level <client-level>',
-            'client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of binary contract)',
-            'deploy'
-        )
-        .action(command(solCommand));
+        .command('keys').alias('k').description('Generate random Key Pair')
+        .action(command(generateKeysCommand));
 
-    // program
-    //     .command('spy [networks...]').description('Run network scanner')
-    //     .action(command(spyCommand));
+    program
+        .command('spy [networks...]').description('Run network scanner')
+        .action(command(spyCommand));
 
     // .command('update', `update ${dev.name} docker images`).action(action)
 
