@@ -13,6 +13,16 @@
  *
  */
 
-test('main', () => {
+import { Solidity } from "../src/compilers/solidity";
+import { Dev } from "../src/dev";
+const path = require('path');
 
+test('Solidity Compiler', async () => {
+    const dev = new Dev();
+    const sol = await Solidity.build(dev, [
+        path.resolve(__dirname, 'test')
+    ], {
+        clientLevel: 'deploy',
+        clientLanguages: ['js'],
+    })
 });

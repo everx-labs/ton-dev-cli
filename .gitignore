@@ -1,3 +1,6 @@
 /node_modules/
 /package-lock.json
 /.idea/
+/__tests__/test.abi.json
+/__tests__/test.tvc
+/__tests__/testContract.js

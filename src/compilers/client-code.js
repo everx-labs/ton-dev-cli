@@ -27,16 +27,17 @@ export const ClientCodeLevel = {
 export type ClientCodeLevelType = $Keys<typeof ClientCodeLevel>;
 
 export const ClientCodeLanguage = {
-    javaScript: 'js',
-    rust: 'rs',
+    js: 'js',
+    rs: 'rs',
 };
+
+export type ClientCodeLanguageType = $Keys<typeof ClientCodeLanguage>;
 
 export type ClientCodeOptions = {
     clientLanguages: ClientCodeLanguageType[],
     clientLevel: ClientCodeLevelType,
 };
 
-export type ClientCodeLanguageType = $Keys<typeof ClientCodeLanguage>;
 
 export class ClientCode {
     static async generate(job = CompilersJob, files: string[], options: ClientCodeOptions) {
@@ -49,10 +50,34 @@ export class ClientCode {
             }
         };
 
-        await generateLanguage(ClientCodeLanguage.javaScript, this.generateJavaScript);
-        await generateLanguage(ClientCodeLanguage.rust, this.generateRust);
+        await generateLanguage(ClientCodeLanguage.js, this.generateJavaScript);
+        await generateLanguage(ClientCodeLanguage.rs, this.generateRust);
     }
 
+
+    static generateJavaScriptFunctionHelp(f, js) {
+        js.push(`
+
+    /*`);
+        if (f.name === 'constructor') {
+            js.push(`
+     * @constructor`);
+        }
+        js.push(`
+     * @param {Object} input`);
+        f.inputs.forEach((i) => {
+            js.push(`
+     * @param {${i.type}} input.${i.name}`)
+        });
+        js.push(`
+     * @returns {Object}`);
+        f.outputs.forEach((o) => {
+            js.push(`
+     * @returns {${o.type}} ${o.name}`)
+        });
+        js.push(`
+     */`);
+    }
 
     static async generateJavaScript(job: CompilersJob, files: string[], options: ClientCodeOptions) {
         files.forEach((file) => {
@@ -60,30 +85,17 @@ export class ClientCode {
             const imageBase64 = options.clientLevel === ClientCodeLevel.deploy
                 ? fs.readFileSync(dir(`${base}.tvc`)).toString('base64')
                 : '';
-            const abi = fs.readFileSync(dir(`${base}.abi.json`)).toString().trimRight();
+            const abiJson = fs.readFileSync(dir(`${base}.abi.json`)).toString().trimRight();
+            const abi = JSON.parse(abiJson);
             const className = `${base[0].toUpperCase()}${base.substr(1)}Contract`;
             const isDeploy = (options.clientLevel || 'deploy') === 'deploy';
-            const deployMethod = isDeploy ?
-`
-    async deploy(constructorParams) {
-        if (!this.keys) {
-            this.keys = await this.client.crypto.ed25519Keypair();
-        }
-        this.address = (await this.client.contracts.deploy({
-            package: pkg,
-            constructorParams,
-            keyPair: this.keys,
-        })).address;
-    }
-` : '';
-
-            const js =
-                `
+            const js: string[] = [];
+            js.push(`
 //
 // This file was generated using TON Labs developer tools.
 //
  
-const abi = ${abi};
+const abi = ${abiJson};
 
 const pkg = {
     abi,
@@ -97,8 +109,26 @@ class ${className} {
         this.keys = keys;
         this.package = pkg;
         this.abi = abi;
-    }
-${deployMethod}   
+    }`);
+            if (isDeploy) {
+                const f = abi.functions.find(x => x.name === 'constructor');
+                if (f) {
+                    ClientCode.generateJavaScriptFunctionHelp(f, js);
+                }
+                js.push(`
+    async deploy(constructorParams) {
+        if (!this.keys) {
+            this.keys = await this.client.crypto.ed25519Keypair();
+        }
+        this.address = (await this.client.contracts.deploy({
+            package: pkg,
+            constructorParams,
+            keyPair: this.keys,
+        })).address;
+    }`);
+            }
+            js.push(`
+
     async run(functionName, input) {
         const result = await this.client.contracts.run({
             address: this.address,
@@ -119,14 +149,26 @@ ${deployMethod}
             keyPair: this.keys,
         });
         return result.output;
-    }    
+    }`);
+            abi.functions.forEach((f) => {
+                if (f.name === 'constructor') {
+                    return;
+                }
+                ClientCode.generateJavaScriptFunctionHelp(f, js);
+                js.push(`
+    ${f.name}(input) {
+        return this.run('${f.name}', input);
+    }`);
+            });
+
+            js.push(`
 }
 
 ${className}.package = pkg;
 
 module.exports = ${className};
-`;
-            fs.writeFileSync(dir(`${base}Contract.js`), js, { encoding: 'utf8' });
+`);
+            fs.writeFileSync(dir(`${base}Contract.js`), js.join(''), { encoding: 'utf8' });
         });
     }
 
