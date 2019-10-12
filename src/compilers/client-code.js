@@ -63,18 +63,22 @@ export class ClientCode {
             js.push(`
      * @constructor`);
         }
-        js.push(`
+        if (f.inputs.length > 0) {
+            js.push(`
      * @param {Object} input`);
-        f.inputs.forEach((i) => {
-            js.push(`
+            f.inputs.forEach((i) => {
+                js.push(`
      * @param {${i.type}} input.${i.name}`)
-        });
-        js.push(`
-     * @returns {Object}`);
-        f.outputs.forEach((o) => {
+            });
+        }
+        if (f.outputs.length > 0) {
             js.push(`
+     * @returns {Object}`);
+            f.outputs.forEach((o) => {
+                js.push(`
      * @returns {${o.type}} ${o.name}`)
-        });
+            });
+        }
         js.push(`
      */`);
     }
@@ -111,18 +115,17 @@ class ${className} {
         this.abi = abi;
     }`);
             if (isDeploy) {
-                const f = abi.functions.find(x => x.name === 'constructor');
-                if (f) {
-                    ClientCode.generateJavaScriptFunctionHelp(f, js);
-                }
+                const f = abi.functions.find(x => x.name === 'constructor')
+                    || { name: 'constructor', inputs: [], outputs: [] };
+                ClientCode.generateJavaScriptFunctionHelp(f, js);
                 js.push(`
-    async deploy(constructorParams) {
+    async deploy(${f.inputs.length > 0 ? 'constructorParams' : ''}) {
         if (!this.keys) {
             this.keys = await this.client.crypto.ed25519Keypair();
         }
         this.address = (await this.client.contracts.deploy({
             package: pkg,
-            constructorParams,
+            constructorParams${f.inputs.length > 0 ? '' : ': {}'},
             keyPair: this.keys,
         })).address;
     }`);
@@ -156,8 +159,13 @@ class ${className} {
                 }
                 ClientCode.generateJavaScriptFunctionHelp(f, js);
                 js.push(`
-    ${f.name}(input) {
-        return this.run('${f.name}', input);
+    ${f.name}(${f.inputs.length > 0 ? 'input' : ''}) {
+        return this.run('${f.name}', ${f.inputs.length > 0 ? 'input' : '{}'});
+    }`);
+                ClientCode.generateJavaScriptFunctionHelp(f, js);
+                js.push(`
+    ${f.name}Local(${f.inputs.length > 0 ? 'input' : ''}) {
+        return this.runLocal('${f.name}', ${f.inputs.length > 0 ? 'input' : '{}'});
     }`);
             });
 
