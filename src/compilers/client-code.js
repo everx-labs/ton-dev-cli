@@ -55,10 +55,10 @@ export class ClientCode {
     }
 
 
-    static generateJavaScriptFunctionHelp(f, js) {
+    static generateJavaScriptFunctionHelp(className, f, js) {
         js.push(`
 
-    /*`);
+    /**`);
         if (f.name === 'constructor') {
             js.push(`
      * @constructor`);
@@ -73,12 +73,22 @@ export class ClientCode {
         }
         if (f.outputs.length > 0) {
             js.push(`
-     * @returns {Object}`);
-            f.outputs.forEach((o) => {
-                js.push(`
-     * @returns {${o.type}} ${o.name}`)
-            });
+     * @return {Promise.<${className}_${f.name}>}`);
         }
+        js.push(`
+     */`);
+    }
+
+    static generateJavaScriptFunctionResultType(className, f, js) {
+        js.push(`
+
+    /**
+     * @typedef ${className}_${f.name}
+     * @type {object}`);
+        f.outputs.forEach((o) => {
+            js.push(`
+     * @property {${o.type}} ${o.name}`)
+        });
         js.push(`
      */`);
     }
@@ -117,7 +127,7 @@ class ${className} {
             if (isDeploy) {
                 const f = abi.functions.find(x => x.name === 'constructor')
                     || { name: 'constructor', inputs: [], outputs: [] };
-                ClientCode.generateJavaScriptFunctionHelp(f, js);
+                ClientCode.generateJavaScriptFunctionHelp(className, f, js);
                 js.push(`
     async deploy(${f.inputs.length > 0 ? 'constructorParams' : ''}) {
         if (!this.keys) {
@@ -157,12 +167,15 @@ class ${className} {
                 if (f.name === 'constructor') {
                     return;
                 }
-                ClientCode.generateJavaScriptFunctionHelp(f, js);
+                if (f.outputs.length > 0) {
+                    ClientCode.generateJavaScriptFunctionResultType(className, f, js);
+                }
+                ClientCode.generateJavaScriptFunctionHelp(className, f, js);
                 js.push(`
     ${f.name}(${f.inputs.length > 0 ? 'input' : ''}) {
         return this.run('${f.name}', ${f.inputs.length > 0 ? 'input' : '{}'});
     }`);
-                ClientCode.generateJavaScriptFunctionHelp(f, js);
+                ClientCode.generateJavaScriptFunctionHelp(className, f, js);
                 js.push(`
     ${f.name}Local(${f.inputs.length > 0 ? 'input' : ''}) {
         return this.runLocal('${f.name}', ${f.inputs.length > 0 ? 'input' : '{}'});
