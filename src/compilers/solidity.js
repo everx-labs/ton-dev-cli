@@ -80,7 +80,7 @@ export class Solidity {
         this.prepareBuildBatch();
         await this.job.run('sh', this.job.guestPath('job.sh'));
         this.pickUpBuildResults();
-        await ClientCode.generate(this.job, this.files, this.options);
+        await ClientCode.generate(this.files, this.options);
     }
 
     prepareBuildBatchForFie(file: string, batch: string[]) {

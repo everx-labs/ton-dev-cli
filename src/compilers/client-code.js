@@ -14,7 +14,6 @@
  */
 
 import { parseFileArg } from "../utils/utils";
-import { CompilersJob } from "./job";
 
 const fs = require('fs');
 
@@ -40,13 +39,13 @@ export type ClientCodeOptions = {
 
 
 export class ClientCode {
-    static async generate(job = CompilersJob, files: string[], options: ClientCodeOptions) {
+    static async generate(files: string[], options: ClientCodeOptions) {
         const generateLanguage = async (
             language: ClientCodeLanguageType,
-            generator: (job: CompilersJob, options: ClientCodeOptions) => Promise<void>
+            generator: (options: ClientCodeOptions) => Promise<void>
         ) => {
             if (options.clientLanguages.find(x => x.toLowerCase() === language.toLowerCase())) {
-                await generator.bind(ClientCode)(job, files, options);
+                await generator.bind(ClientCode)(files, options);
             }
         };
 
@@ -93,7 +92,7 @@ export class ClientCode {
      */`);
     }
 
-    static async generateJavaScript(job: CompilersJob, files: string[], options: ClientCodeOptions) {
+    static async generateJavaScript(files: string[], options: ClientCodeOptions) {
         files.forEach((file) => {
             const { dir, base } = parseFileArg(file, '.sol');
             const imageBase64 = options.clientLevel === ClientCodeLevel.deploy
@@ -194,7 +193,7 @@ module.exports = ${className};
     }
 
 
-    static async generateRust(job: CompilersJob, files: string[], options: ClientCodeOptions) {
+    static async generateRust(files: string[], options: ClientCodeOptions) {
 
     }
 }

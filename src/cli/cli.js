@@ -15,7 +15,7 @@
 // @flow
 
 import { TONClient } from "ton-client-node-js";
-import { ClientCodeLevel } from "../compilers/client-code";
+import { ClientCode, ClientCodeLevel } from "../compilers/client-code";
 import { Solidity } from "../compilers/solidity";
 import { Dev } from "../dev";
 import { Network } from "../networks/networks";
@@ -110,6 +110,13 @@ async function solCommand(dev: Dev, files: string[], options: SolOptions) {
     });
 }
 
+async function genCommand(dev: Dev, files: string[], options: SolOptions) {
+    await ClientCode.generate(files, {
+        clientLanguages: (options.clientLanguages || '').split(','),
+        clientLevel: options.clientLevel || ClientCodeLevel.run,
+    });
+}
+
 async function spyCommand(dev: Dev, networks: string[]) {
     await spy(dev, networks);
 }
@@ -153,6 +160,19 @@ async function handleCommandLine(dev: Dev, args: string[]) {
             'deploy'
         )
         .action(command(solCommand));
+
+    program
+        .command('gen [files...]').description('Generate client code for contract[s]')
+        .option(
+            '-l, --client-languages <languages>',
+            'generate client code for languages: "js", "rs" (multiple languages must be separated with comma)'
+        )
+        .option(
+            '-L, --client-level <client-level>',
+            'client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of binary contract)',
+            'deploy'
+        )
+        .action(command(genCommand));
 
     program
         .command('start').description('Start dev containers')
