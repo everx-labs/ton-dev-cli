@@ -19,6 +19,7 @@ contract ERC20 {
     mapping (address => mapping (address => uint256)) private _allowed;
 
     uint256 private _totalSupply;
+    uint256 public _foo;
 
     constructor(uint256 totalSupply, address owner) public payable {
         _totalSupply = totalSupply;

@@ -57,35 +57,33 @@ function parseSolidityFileArg(fileArg: string): SolidityFileArg {
 
 export class Solidity {
     static async build(dev: Dev, files: string[], options: SolidityBuildOptions) {
-        const job = await CompilersJob.create(dev, {
-            keepContent: false,
-        });
-        const sol = new Solidity(dev, job, files, options);
+        const sol = new Solidity(dev, files, options);
         await sol.build();
     }
 
     dev: Dev;
-    job: CompilersJob;
     files: string[];
     options: SolidityBuildOptions;
 
-    constructor(dev: Dev, job: CompilersJob, files: string[], options: SolidityBuildOptions) {
+    constructor(dev: Dev, files: string[], options: SolidityBuildOptions) {
         this.dev = dev;
-        this.job = job;
         this.files = files;
         this.options = options;
     }
 
     async build() {
-        this.prepareBuildBatch();
-        await this.job.run('sh', this.job.guestPath('job.sh'));
-        this.pickUpBuildResults();
-        await ClientCode.generate(this.files, this.options);
+        for (let i = 0; i < this.files.length; i += 1) {
+            const file = parseSolidityFileArg(this.files[i]);
+            const job = await CompilersJob.create(this.dev, file.dir());
+            this.prepareBuildBatch(file, job);
+            await job.run('sh', job.guestPath('job.sh'));
+            this.cleanBuildResults(file, job);
+            await ClientCode.generate([this.files[i]], this.options);
+        }
     }
 
-    prepareBuildBatchForFie(file: string, batch: string[]) {
-        const { dir, name } = parseSolidityFileArg(file);
-        fs.copyFileSync(dir(name.sol), this.job.hostPath(name.sol));
+    prepareBuildBatchForFie(file: SolidityFileArg, batch: string[]) {
+        const { name } = file;
         batch.push(
             `solc ${name.sol} --tvm > ${name.code}`,
             `solc ${name.sol} --tvm_abi > ${name.abi}`,
@@ -93,25 +91,24 @@ export class Solidity {
         );
     }
 
-    prepareBuildBatch() {
+    prepareBuildBatch(file: SolidityFileArg, job: CompilersJob) {
         const batch = [];
-        batch.push(`cd ${this.job.guestPath()}`);
-        this.files.forEach(file => this.prepareBuildBatchForFie(file, batch));
-        fs.writeFileSync(this.job.hostPath('job.sh'), batch.join('\n'));
+        batch.push(`cd ${job.guestPath()}`);
+        this.prepareBuildBatchForFie(file, batch);
+        fs.writeFileSync(job.hostPath('job.sh'), batch.join('\n'));
     }
 
-    pickUpBuildResults() {
-        this.files.forEach((fileArg) => {
-            const { dir, name } = parseSolidityFileArg(fileArg);
-            const linkerResult = fs.readFileSync(this.job.hostPath(name.result), { encoding: 'utf8' });
-            const tvcFile = (/Saved contract to file\s*(.*\.tvc)/gi.exec(linkerResult) || [])[1];
-            if (tvcFile) {
-                fs.copyFileSync(this.job.hostPath(tvcFile), dir(name.tvc));
-                fs.copyFileSync(this.job.hostPath(name.abi), dir(name.abi));
-            } else {
-                console.log(linkerResult);
-                process.exit(1)
-            }
-        });
+    cleanBuildResults(file: SolidityFileArg, job: CompilersJob) {
+        const { name } = file;
+        const linkerResult = fs.readFileSync(job.hostPath(name.result), { encoding: 'utf8' });
+        const tvcFile = (/Saved contract to file\s*(.*\.tvc)/gi.exec(linkerResult) || [])[1];
+        if (!tvcFile) {
+            console.log(linkerResult);
+            process.exit(1)
+        }
+        fs.renameSync(job.hostPath(tvcFile), job.hostPath(name.tvc));
+        fs.unlinkSync(job.hostPath('job.sh'));
+        fs.unlinkSync(job.hostPath(name.result));
+        fs.unlinkSync(job.hostPath(name.code));
     }
 }

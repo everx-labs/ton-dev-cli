@@ -53,21 +53,37 @@ export class ClientCode {
         await generateLanguage(ClientCodeLanguage.rs, this.generateRust);
     }
 
+    static generateJavascriptVarHelp(pragma, parent, v, desc, js) {
+        const jsType = {
+            uint256: 'string',
+        }[v.type] || v.type;
 
-    static generateJavaScriptFunctionHelp(className, f, js) {
+        js.push(`
+     * @${pragma} {${jsType}} ${parent ? `${parent}.` : ''}${v.name}${jsType !== v.type ? ` (${v.type})` : ''}${desc ? ` ${desc}` : ''}`);
+    }
+
+    static generateJavaScriptFunctionHelp(className, f, abi, js) {
+        const isConstructor = f.name === 'constructor';
         js.push(`
 
     /**`);
-        if (f.name === 'constructor') {
+        if (isConstructor) {
             js.push(`
      * @constructor`);
         }
         if (f.inputs.length > 0) {
+            const paramsName = isConstructor ? 'constructorParams' : 'input';
             js.push(`
-     * @param {Object} input`);
+     * @param {Object} ${paramsName}`);
             f.inputs.forEach((i) => {
-                js.push(`
-     * @param {${i.type}} input.${i.name}`)
+                ClientCode.generateJavascriptVarHelp('param', paramsName, i, '', js);
+            });
+        }
+        if (isConstructor && abi.data.length > 0) {
+            js.push(`
+     * @param {Object} initParams`);
+            abi.data.forEach((i) => {
+                ClientCode.generateJavascriptVarHelp('param', 'initParams', i, '', js);
             });
         }
         if (f.outputs.length > 0) {
@@ -78,15 +94,14 @@ export class ClientCode {
      */`);
     }
 
-    static generateJavaScriptFunctionResultType(className, f, js) {
+    static generateJavaScriptFunctionResultType(className, f, abi, js) {
         js.push(`
 
     /**
      * @typedef ${className}_${f.name}
      * @type {object}`);
         f.outputs.forEach((o) => {
-            js.push(`
-     * @property {${o.type}} ${o.name}`)
+            ClientCode.generateJavascriptVarHelp('property', '', o, '', js);
         });
         js.push(`
      */`);
@@ -126,15 +141,18 @@ class ${className} {
             if (isDeploy) {
                 const f = abi.functions.find(x => x.name === 'constructor')
                     || { name: 'constructor', inputs: [], outputs: [] };
-                ClientCode.generateJavaScriptFunctionHelp(className, f, js);
+                ClientCode.generateJavaScriptFunctionHelp(className, f, abi, js);
+                const hasParams = f.inputs.length > 0;
+                const hasData = abi.data.length > 0;
                 js.push(`
-    async deploy(${f.inputs.length > 0 ? 'constructorParams' : ''}) {
+    async deploy(${hasParams ? 'constructorParams' : ''}${hasParams && hasData ? ', ' : ''}${hasData ? 'initParams' : ''}) {
         if (!this.keys) {
             this.keys = await this.client.crypto.ed25519Keypair();
         }
         this.address = (await this.client.contracts.deploy({
             package: pkg,
-            constructorParams${f.inputs.length > 0 ? '' : ': {}'},
+            constructorParams${hasParams ? '' : ': {}'},
+            initParams${hasData ? '' : ': {}'},
             keyPair: this.keys,
         })).address;
     }`);
@@ -167,14 +185,14 @@ class ${className} {
                     return;
                 }
                 if (f.outputs.length > 0) {
-                    ClientCode.generateJavaScriptFunctionResultType(className, f, js);
+                    ClientCode.generateJavaScriptFunctionResultType(className, f, abi, js);
                 }
-                ClientCode.generateJavaScriptFunctionHelp(className, f, js);
+                ClientCode.generateJavaScriptFunctionHelp(className, f, abi, js);
                 js.push(`
     ${f.name}(${f.inputs.length > 0 ? 'input' : ''}) {
         return this.run('${f.name}', ${f.inputs.length > 0 ? 'input' : '{}'});
     }`);
-                ClientCode.generateJavaScriptFunctionHelp(className, f, js);
+                ClientCode.generateJavaScriptFunctionHelp(className, f, abi, js);
                 js.push(`
     ${f.name}Local(${f.inputs.length > 0 ? 'input' : ''}) {
         return this.runLocal('${f.name}', ${f.inputs.length > 0 ? 'input' : '{}'});

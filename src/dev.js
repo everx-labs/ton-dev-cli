@@ -18,10 +18,11 @@ import { Compilers } from "./compilers/compilers";
 import type { CompilersConfig } from "./compilers/compilers";
 import type { NetworkConfig } from "./networks/networks";
 import { Network } from "./networks/networks";
-import type { ContainerDef, DContainerInfo, DImageInfo } from "./utils/docker";
+import type { ContainerDef, DContainerInfo, DImageInfo, DMount, DockerContainer } from "./utils/docker";
 import { ContainerStatus, DevDocker } from "./utils/docker";
 import { texts } from "./utils/texts";
-import { breakWords, inputLine, tonlabsHomePath, version } from "./utils/utils";
+import type { PathJoin } from "./utils/utils";
+import { bindPathJoinTo, breakWords, inputLine, tonlabsHomePath, version } from "./utils/utils";
 
 const fs = require('fs');
 const path = require('path');
@@ -173,6 +174,31 @@ class Dev {
         this.saveConfig();
         await this.docker.startupContainers(defs, ContainerStatus.running);
     }
+
+    // Compilers
+
+    async getCompilersMountedTo(hostPath: string): Promise<{container: DockerContainer, guestPath: PathJoin}> {
+        let info = (await this.docker.getContainerInfos()).find((info: DContainerInfo) => {
+            return DevDocker.containersImageMatched(info, this.compilers.requiredImage)
+                && info.Mounts.find((mount: DMount) => mount.Source.toLowerCase() === hostPath.toLowerCase());
+        });
+        let container: DockerContainer;
+        if (info) {
+            container = this.docker.client.getContainer(info.Id);
+            if (!DevDocker.isRunning(info)) {
+                await container.start();
+            }
+        } else {
+            container = await this.compilers.createContainerMountedTo(hostPath, this.docker);
+            await container.start();
+        }
+        return {
+            container,
+            guestPath: bindPathJoinTo(this.compilers.mountDestination, '/')
+        };
+    }
+
+    // Networks
 
     ensureNetwork(name: string): Network {
         const existing = this.networks.find(x => x.name.toLowerCase() === name.toLowerCase());
