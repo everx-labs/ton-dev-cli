@@ -17,12 +17,15 @@ import { Solidity } from "../src/compilers/solidity";
 import { Dev } from "../src/dev";
 const path = require('path');
 
+jest.setTimeout(60_000);
+
 test('Solidity Compiler', async () => {
     const dev = new Dev();
-    const sol = await Solidity.build(dev, [
+    await Solidity.build(dev, [
         path.resolve(__dirname, 'test')
     ], {
         clientLevel: 'deploy',
         clientLanguages: ['js'],
     })
 });
+

@@ -14,8 +14,34 @@
  */
 
 import { parseFileArg } from "../utils/utils";
+import Handlebars from 'handlebars';
+import { parseSolidityFileArg } from "./solidity";
 
+const path = require('path');
 const fs = require('fs');
+
+type Template = {
+    build: any
+}
+
+Handlebars.registerHelper('LB', () => '{');
+Handlebars.registerHelper('RB', () => '}');
+
+function compileTemplate(...pathItems: string[]): Template {
+    const templatePath = path.resolve(__dirname, '..', '..', ...pathItems);
+    const templateText = fs.readFileSync(templatePath, { encoding: 'utf8' });
+    return {
+        build: Handlebars.compile(templateText, {
+            noEscape: true,
+        })
+    };
+}
+
+async function applyTemplate(template: Template, context: any): Promise<string> {
+    return template.build(context);
+}
+
+const jsContractTemplate = compileTemplate('js-templates', 'contract.js.hbs');
 
 export const ClientCodeLevel = {
     none: 'none',
@@ -53,161 +79,68 @@ export class ClientCode {
         await generateLanguage(ClientCodeLanguage.rs, this.generateRust);
     }
 
-    static generateJavascriptVarHelp(pragma, parent, v, desc, js) {
-        const jsType = {
-            uint256: 'string',
-        }[v.type] || v.type;
+    static getTemplateContext(fileArg: string, options: ClientCodeOptions): any {
+        const file = parseSolidityFileArg(fileArg);
+        const { dir, name } = file;
+        const imageBase64 = options.clientLevel === ClientCodeLevel.deploy
+            ? fs.readFileSync(dir(name.tvc)).toString('base64')
+            : '';
+        const abiJson = fs.readFileSync(dir(name.abi)).toString().trimRight();
+        const abi = JSON.parse(abiJson);
+        const className = `${name.base[0].toUpperCase()}${name.base.substr(1)}Contract`;
+        const isDeploy = (options.clientLevel || 'deploy') === 'deploy';
 
-        js.push(`
-     * @${pragma} {${jsType}} ${parent ? `${parent}.` : ''}${v.name}${jsType !== v.type ? ` (${v.type})` : ''}${desc ? ` ${desc}` : ''}`);
-    }
+        const varContext = (v) => {
+            const jsType = {
+                uint256: 'string',
+                address: 'string',
+                'uint8[]': 'number[]',
+            }[v.type] || v.type;
+            return {
+                ...v,
+                jsType,
+                isSameJsType: jsType === v.type,
+            }
+        };
 
-    static generateJavaScriptFunctionHelp(className, f, abi, js) {
-        const isConstructor = f.name === 'constructor';
-        js.push(`
+        const funContext = (f) => {
+            return {
+                ...f,
+                hasInputs: f.inputs.length > 0,
+                hasOutputs: f.outputs.length > 0,
+                inputs: f.inputs.map(varContext),
+                outputs: f.outputs.map(varContext),
+            }
+        };
 
-    /**`);
-        if (isConstructor) {
-            js.push(`
-     * @constructor`);
-        }
-        if (f.inputs.length > 0) {
-            const paramsName = isConstructor ? 'constructorParams' : 'input';
-            js.push(`
-     * @param {Object} ${paramsName}`);
-            f.inputs.forEach((i) => {
-                ClientCode.generateJavascriptVarHelp('param', paramsName, i, '', js);
-            });
-        }
-        if (isConstructor && abi.data.length > 0) {
-            js.push(`
-     * @param {Object} initParams`);
-            abi.data.forEach((i) => {
-                ClientCode.generateJavascriptVarHelp('param', 'initParams', i, '', js);
-            });
-        }
-        if (f.outputs.length > 0) {
-            js.push(`
-     * @return {Promise.<${className}_${f.name}>}`);
-        }
-        js.push(`
-     */`);
-    }
+        const constructor = funContext(abi.functions.find(x => x.name === 'constructor'));
+        constructor.hasData = abi.data.length > 0;
+        constructor.hasInputsAndData = constructor.hasInputs && constructor.hasData;
+        constructor.data = abi.data.map(varContext);
 
-    static generateJavaScriptFunctionResultType(className, f, abi, js) {
-        js.push(`
+        const functions = abi.functions.filter(x => x.name !== 'constructor').map(funContext);
 
-    /**
-     * @typedef ${className}_${f.name}
-     * @type {object}`);
-        f.outputs.forEach((o) => {
-            ClientCode.generateJavascriptVarHelp('property', '', o, '', js);
-        });
-        js.push(`
-     */`);
+        return {
+            imageBase64,
+            abiJson,
+            abi,
+            className,
+            isDeploy,
+            constructor,
+            functions,
+        };
     }
 
     static async generateJavaScript(files: string[], options: ClientCodeOptions) {
-        files.forEach((file) => {
-            const { dir, base } = parseFileArg(file, '.sol');
-            const imageBase64 = options.clientLevel === ClientCodeLevel.deploy
-                ? fs.readFileSync(dir(`${base}.tvc`)).toString('base64')
-                : '';
-            const abiJson = fs.readFileSync(dir(`${base}.abi.json`)).toString().trimRight();
-            const abi = JSON.parse(abiJson);
-            const className = `${base[0].toUpperCase()}${base.substr(1)}Contract`;
-            const isDeploy = (options.clientLevel || 'deploy') === 'deploy';
-            const js: string[] = [];
-            js.push(`
-//
-// This file was generated using TON Labs developer tools.
-//
- 
-const abi = ${abiJson};
-
-const pkg = {
-    abi,
-    imageBase64: '${imageBase64}',
-};
-
-class ${className} {
-    constructor(client, address, keys) {
-        this.client = client;
-        this.address = address;
-        this.keys = keys;
-        this.package = pkg;
-        this.abi = abi;
-    }`);
-            if (isDeploy) {
-                const f = abi.functions.find(x => x.name === 'constructor')
-                    || { name: 'constructor', inputs: [], outputs: [] };
-                ClientCode.generateJavaScriptFunctionHelp(className, f, abi, js);
-                const hasParams = f.inputs.length > 0;
-                const hasData = abi.data.length > 0;
-                js.push(`
-    async deploy(${hasParams ? 'constructorParams' : ''}${hasParams && hasData ? ', ' : ''}${hasData ? 'initParams' : ''}) {
-        if (!this.keys) {
-            this.keys = await this.client.crypto.ed25519Keypair();
+        for (let i = 0; i < files.length; i += 1) {
+            await ClientCode.generateJavaScriptFile(files[i], options);
         }
-        this.address = (await this.client.contracts.deploy({
-            package: pkg,
-            constructorParams${hasParams ? '' : ': {}'},
-            initParams${hasData ? '' : ': {}'},
-            keyPair: this.keys,
-        })).address;
-    }`);
-            }
-            js.push(`
+    }
 
-    async run(functionName, input) {
-        const result = await this.client.contracts.run({
-            address: this.address,
-            functionName,
-            abi,
-            input,
-            keyPair: this.keys,
-        });
-        return result.output;
-    }    
-
-    async runLocal(functionName, input) {
-        const result = await this.client.contracts.runLocal({
-            address: this.address,
-            functionName,
-            abi,
-            input,
-            keyPair: this.keys,
-        });
-        return result.output;
-    }`);
-            abi.functions.forEach((f) => {
-                if (f.name === 'constructor') {
-                    return;
-                }
-                if (f.outputs.length > 0) {
-                    ClientCode.generateJavaScriptFunctionResultType(className, f, abi, js);
-                }
-                ClientCode.generateJavaScriptFunctionHelp(className, f, abi, js);
-                js.push(`
-    ${f.name}(${f.inputs.length > 0 ? 'input' : ''}) {
-        return this.run('${f.name}', ${f.inputs.length > 0 ? 'input' : '{}'});
-    }`);
-                ClientCode.generateJavaScriptFunctionHelp(className, f, abi, js);
-                js.push(`
-    ${f.name}Local(${f.inputs.length > 0 ? 'input' : ''}) {
-        return this.runLocal('${f.name}', ${f.inputs.length > 0 ? 'input' : '{}'});
-    }`);
-            });
-
-            js.push(`
-}
-
-${className}.package = pkg;
-
-module.exports = ${className};
-`);
-            fs.writeFileSync(dir(`${base}Contract.js`), js.join(''), { encoding: 'utf8' });
-        });
+    static async generateJavaScriptFile(file: string, options: ClientCodeOptions) {
+        const { dir, base } = parseFileArg(file, '.sol');
+        const js = await applyTemplate(jsContractTemplate, ClientCode.getTemplateContext(file, options));
+        fs.writeFileSync(dir(`${base}Contract.js`), js, { encoding: 'utf8' });
     }
 
 

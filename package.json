@@ -29,8 +29,9 @@
 		"dockerode": "^2.5.8",
 		"@babel/runtime": "^7.6.0",
 		"commander": "latest",
-		"ton-client-js": "^0.12.1",
-		"ton-client-node-js": "^0.12.1"
+		"ton-client-js": "^0.14.0",
+		"ton-client-node-js": "^0.14.0",
+		"handlebars": "^4.4.3"
 	},
 	"devDependencies": {
 		"@babel/cli": "^7.6.0",

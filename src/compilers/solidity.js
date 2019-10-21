@@ -39,7 +39,7 @@ type SolidityFileArg = {
     },
 }
 
-function parseSolidityFileArg(fileArg: string): SolidityFileArg {
+export function parseSolidityFileArg(fileArg: string): SolidityFileArg {
     const parsed = parseFileArg(fileArg, '.sol');
     return {
         dir: parsed.dir,
