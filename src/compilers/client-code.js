@@ -92,8 +92,15 @@ export class ClientCode {
 
         const varContext = (v) => {
             const jsType = {
-                uint256: 'string',
                 address: 'string',
+                'address[]': 'string[]',
+                uint256: 'string',
+                uint32: 'number',
+                uint16: 'number',
+                uint8: 'number',
+                'uint256[]': 'string[]',
+                'uint32[]': 'number[]',
+                'uint16[]': 'number[]',
                 'uint8[]': 'number[]',
             }[v.type] || v.type;
             return {
