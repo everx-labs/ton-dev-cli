@@ -50,7 +50,14 @@ Result Type Doc
 // This file was generated using TON Labs developer tools.
 //
 
-class {{className}} {
+const abi = {{abiJson}};
+
+const pkg = {
+    abi,
+    imageBase64: '{{imageBase64}}',
+};
+
+export default class {{className}} {
     /**
     * @param {TONClient} client
     * @param {string} address can be null if contract will be deployed
@@ -141,9 +148,4 @@ class {{className}} {
 {{/each}}
 }
 
-const abi = {{abiJson}};
-
-const pkg = {
-    abi,
-    imageBase64: '{{imageBase64}}',
-};
+{{className}}.package = pkg;
