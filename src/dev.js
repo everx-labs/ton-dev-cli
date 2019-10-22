@@ -37,6 +37,10 @@ export type CompilersWithNetworks = {
     networks: Network[],
 }
 
+function excludeCompilers(dev: Dev, defs: ContainerDef[]): ContainerDef[] {
+    return defs.filter(x => x !== dev.compilers);
+}
+
 class Dev {
     static defaultConfig: DevConfig = Object.freeze({
         compilers: Compilers.defaultConfig,
@@ -126,7 +130,7 @@ class Dev {
     }
 
     async start(source: CompilersWithNetworks) {
-        await this.docker.startupContainers(this.getDefs(source), ContainerStatus.running);
+        await this.docker.startupContainers(excludeCompilers(this, this.getDefs(source)), ContainerStatus.running);
     }
 
     async stop(source: CompilersWithNetworks) {
@@ -136,13 +140,13 @@ class Dev {
     async restart(source: CompilersWithNetworks) {
         const defs = this.getDefs(source);
         await this.docker.shutdownContainers(defs, ContainerStatus.created);
-        await this.docker.startupContainers(defs, ContainerStatus.running);
+        await this.docker.startupContainers(excludeCompilers(this, defs), ContainerStatus.running);
     }
 
     async recreate(source: CompilersWithNetworks) {
         const defs = this.getDefs(source);
         await this.docker.shutdownContainers(defs, ContainerStatus.missing);
-        await this.docker.startupContainers(defs, ContainerStatus.created);
+        await this.docker.startupContainers(excludeCompilers(this, defs), ContainerStatus.created);
     }
 
 
@@ -172,7 +176,7 @@ class Dev {
             network.setConfig(config);
         });
         this.saveConfig();
-        await this.docker.startupContainers(defs, ContainerStatus.running);
+        await this.docker.startupContainers(excludeCompilers(this, defs), ContainerStatus.running);
     }
 
     // Compilers
