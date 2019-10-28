@@ -55,6 +55,10 @@ export type SolOptions = {
     clientLevel?: string,
 }
 
+export type WebOptions = {
+    port: string,
+}
+
 function findNetworks(dev: Dev, options: NetworksOptions): ?(Network[]) {
     const names = options.networks;
     if (!names) {

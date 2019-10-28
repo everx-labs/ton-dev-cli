@@ -20,6 +20,7 @@ import { Solidity } from "../compilers/solidity";
 import { Dev } from "../dev";
 import { Network } from "../networks/networks";
 import type { NetworkConfig } from "../networks/networks";
+import { web } from "../server/server";
 import { compilersWithNetworks } from "./options";
 import type {
     CleanOptions,
@@ -28,7 +29,7 @@ import type {
     SetupOptions, SolOptions,
     StartOptions,
     StopOptions,
-    UseOptions
+    UseOptions, WebOptions
 } from "./options";
 
 import { infoCommand } from "./info.js";
@@ -119,6 +120,10 @@ async function genCommand(dev: Dev, files: string[], options: SolOptions) {
 
 async function spyCommand(dev: Dev, networks: string[]) {
     await spy(dev, networks);
+}
+
+async function webConsoleCommand(dev: Dev, options: WebOptions) {
+    await web(dev, options);
 }
 
 const sharedOptions = {
@@ -239,6 +244,11 @@ async function handleCommandLine(dev: Dev, args: string[]) {
     program
         .command('spy [networks...]').description('Run network scanner')
         .action(command(spyCommand));
+
+    program
+        .command('web').description('Run web console')
+        .option('-p, --port <port>', 'host port to bound web console (default: 8800)', '8800')
+        .action(command(webConsoleCommand));
 
     // .command('update', `update ${dev.name} docker images`).action(action)
 

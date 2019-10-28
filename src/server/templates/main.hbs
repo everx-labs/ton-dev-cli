@@ -1,0 +1,117 @@
+<head>
+    <title>TON Dev Local</title>
+</head>
+<style>
+    body {
+        padding: 0;
+        margin: 0;
+        font-family: Helvetica, serif;
+        background-color: #2e2f2e;
+    }
+
+    div.content {
+        padding: 8pt 16pt 8pt 16pt;
+    }
+
+    div.header {
+        width: 100%;
+        background-color: #2d3032;
+        border-bottom: 1pt solid #4a4a4b;
+        padding: 2pt;
+    }
+
+    div.header table {
+        color: beige;
+    }
+
+    h1 {
+        padding: 2pt 2pt 6pt 8pt;
+        margin: 0;
+    }
+
+    h2 {
+        color: dimgray;
+        font-weight: normal;
+    }
+
+    th {
+        padding: 4pt 28pt 4pt 4pt;
+        border-bottom: 1pt solid #4a4a4b;
+        text-align: left;
+        color: dimgray;
+        font-weight: normal;
+    }
+
+    div.header td {
+        padding: 8pt 28pt 2pt 4pt;
+    }
+
+    div.panel td {
+        padding: 8pt 28pt 2pt 4pt;
+        color: lightgray;
+    }
+
+    span.button {
+        /*background-color: grey;*/
+        font-size: 10pt;
+        padding: 2pt 6pt 2pt 6pt;
+        border-radius: 4pt;
+        border: 1pt solid grey;
+        cursor: hand;
+    }
+    span.button-selected {
+        background-color: cornflowerblue;
+        font-size: 10pt;
+        padding: 2pt 6pt 2pt 6pt;
+        border-radius: 4pt;
+        color: beige;
+    }
+    div.panel {
+        margin: 16pt;
+        padding: 2pt 16pt 16pt 16pt;
+        border-radius: 8pt;
+        border: 1pt solid #4a4a4b;
+        width: max-content;
+        background-color: #343536;
+    }
+</style>
+<script language="JavaScript">
+    function onUseCompilersVersion(version) {
+        window.alert(version);
+    }
+</script>
+<body>
+<div class="header">
+    <table>
+        <tr>
+            <td><h1>TON Dev Console </h1></td>
+            <td style="color: gainsboro; font-size: 16pt">
+                Compilers:
+                <span class="button" onclick="onUseCompilersVersion('0.13.0')">0.13.0</span>
+                <span class="button" onclick="onUseCompilersVersion('0.14.0')">0.14.0</span>
+                <span class="button-selected">0.14.1-rc</span>
+                <span class="button" onclick="onUseCompilersVersion('0.15.0-rc')">0.15.0-rc</span>
+            </td>
+        </tr>
+    </table>
+</div>
+<div class="panel">
+    <h2>Networks</h2>
+    <table cellspacing="0">
+        <tr>
+            <th>Name</th>
+            <th>Version</th>
+            <th>Port</th>
+            <th>DB Port</th>
+        </tr>
+        {{#each networks}}
+        <tr>
+            <td>{{name}}</td>
+            <td>{{version}}</td>
+            <td>{{hostPort}}</td>
+            <td>{{arangoHostPort}}</td>
+        </tr>
+        {{/each}}
+    </table>
+</div>
+</body>
