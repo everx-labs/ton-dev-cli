@@ -1,6 +1,10 @@
 # ton-dev-cli
 TON Labs Dev Command Line Tools
 
+See https://docs.ton.dev for documentation
+
+---
+
 # Install
 ```shell
 npm install -g ton-dev-cli
