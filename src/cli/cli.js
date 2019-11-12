@@ -35,6 +35,8 @@ import type {
 import { infoCommand } from "./info.js";
 import { spy } from "./spy";
 
+const USE_EXPERIMENTAL_FEATURES = false;
+
 const program = require('commander');
 
 
@@ -149,7 +151,7 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .description('TON Labs development tools');
 
     program
-        .command('info').description('Show summary about dev environment')
+        .command('info', { isDefault: true }).description('Show summary about dev environment')
         .option('-a, --available', 'show available versions')
         .action(command(infoCommand));
 
@@ -241,14 +243,16 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .command('keys').alias('k').description('Generate random Key Pair')
         .action(command(generateKeysCommand));
 
-    program
-        .command('spy [networks...]').description('Run network scanner')
-        .action(command(spyCommand));
+    if (USE_EXPERIMENTAL_FEATURES) {
+        program
+            .command('spy [networks...]').description('Run network scanner')
+            .action(command(spyCommand));
 
-    program
-        .command('web').description('Run web console')
-        .option('-p, --port <port>', 'host port to bound web console (default: 8800)', '8800')
-        .action(command(webConsoleCommand));
+        program
+            .command('web').description('Run web console')
+            .option('-p, --port <port>', 'host port to bound web console (default: 8800)', '8800')
+            .action(command(webConsoleCommand));
+    }
 
     // .command('update', `update ${dev.name} docker images`).action(action)
 
@@ -261,7 +265,11 @@ async function handleCommandLine(dev: Dev, args: string[]) {
             program.outputHelp();
         }
     } else {
-        await commandAction(...[dev, ...commandArgs]);
+        if (commandAction === infoCommand) {
+            const options = commandArgs[commandArgs.length - 1];
+            options.available = options.parent.available;
+        }
+        await commandAction(dev, ...commandArgs);
     }
 }
 

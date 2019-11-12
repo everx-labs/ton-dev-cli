@@ -25,6 +25,7 @@ import type { PathJoin } from "./utils/utils";
 import { bindPathJoinTo, breakWords, inputLine, tonlabsHomePath, version } from "./utils/utils";
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 type DevConfig = {
@@ -181,10 +182,17 @@ class Dev {
 
     // Compilers
 
+    hostPathToMountSource(hostPath: string): string {
+        if (os.platform() !== 'win32') {
+            return hostPath.toLowerCase();
+        }
+        return `/host_mnt/${hostPath.replace(/:\\|\\/g, '/').toLowerCase()}`;
+    }
+
     async getCompilersMountedTo(hostPath: string): Promise<{container: DockerContainer, guestPath: PathJoin}> {
         let info = (await this.docker.getContainerInfos()).find((info: DContainerInfo) => {
             return DevDocker.containersImageMatched(info, this.compilers.requiredImage)
-                && info.Mounts.find((mount: DMount) => mount.Source.toLowerCase() === hostPath.toLowerCase());
+                && info.Mounts.find((mount: DMount) => mount.Source.toLowerCase() === this.hostPathToMountSource(hostPath));
         });
         let container: DockerContainer;
         if (info) {

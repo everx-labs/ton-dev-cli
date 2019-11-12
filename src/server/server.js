@@ -63,7 +63,7 @@ export class TONDevWebConsole {
             console.log('[Web Console] request failed', error);
             await res.json({
                 jsonrpc: '2.0',
-                id,
+                id: 1,
                 error: {
                     code: Number.parseInt(error && error.code) || 1,
                     message: error.message || error.toString(),

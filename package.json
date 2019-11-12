@@ -1,6 +1,6 @@
 {
 	"name": "ton-dev-cli",
-	"version": "0.15.0",
+	"version": "0.16.0",
 	"keywords": [
 		"TON",
 		"Javascript",
@@ -27,7 +27,7 @@
 	},
 	"dependencies": {
 		"@babel/runtime": "^7.6.0",
-		"commander": "latest",
+		"commander": "^4.0.1",
 		"cors": "^2.8.5",
 		"dockerode": "^2.5.8",
 		"express": "^4.17.1",
