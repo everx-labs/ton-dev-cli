@@ -58,9 +58,19 @@ export const ClientCodeLanguage = {
 
 export type ClientCodeLanguageType = $Keys<typeof ClientCodeLanguage>;
 
+export const JSModule = {
+    node: 'node',
+    nodeNoDefault: 'nodeNoDefault',
+    es: 'es',
+    esNoDefault: 'esNoDefault',
+};
+
+export type JSModuleType = $Keys<typeof JSModule>;
+
 export type ClientCodeOptions = {
     clientLanguages: ClientCodeLanguageType[],
     clientLevel: ClientCodeLevelType,
+    jsModule: JSModuleType,
 };
 
 
@@ -135,6 +145,10 @@ export class ClientCode {
             isDeploy,
             constructor,
             functions,
+            jsModuleNode: options.jsModule === JSModule.node || options.jsModule === JSModule.nodeNoDefault,
+            jsModuleNodeDefault: options.jsModule === JSModule.node,
+            jsModuleEs: options.jsModule === JSModule.es || options.jsModule === JSModule.esNoDefault,
+            jsModuleEsDefault: options.jsModule === JSModule.es,
         };
     }
 

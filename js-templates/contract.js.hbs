@@ -57,7 +57,7 @@ const pkg = {
     imageBase64: '{{imageBase64}}',
 };
 
-export default class {{className}} {
+{{#if jsModuleEs}}export {{#if jsModuleEsDefault}}default {{/if}}{{/if}}class {{className}} {
     /**
     * @param {TONClient} client
     * @param {string} address can be null if contract will be deployed
@@ -149,3 +149,7 @@ export default class {{className}} {
 }
 
 {{className}}.package = pkg;
+{{#if jsModuleNode}}
+
+module.exports = {{#unless jsModuleNodeDefault}}{{LB}} {{/unless}}{{className}}{{#unless jsModuleNodeDefault}} {{RB}}{{/unless}};
+{{/if}}

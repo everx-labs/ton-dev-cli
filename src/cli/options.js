@@ -53,6 +53,7 @@ export type SetNetworkOptions = {
 export type SolOptions = {
     clientLanguages?: string,
     clientLevel?: string,
+    jsModule?: string,
 }
 
 export type WebOptions = {

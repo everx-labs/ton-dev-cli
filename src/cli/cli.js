@@ -15,7 +15,7 @@
 // @flow
 
 import { TONClient } from "ton-client-node-js";
-import { ClientCode, ClientCodeLevel } from "../compilers/client-code";
+import { ClientCode, ClientCodeLevel, JSModule } from "../compilers/client-code";
 import { Solidity } from "../compilers/solidity";
 import { Dev } from "../dev";
 import { Network } from "../networks/networks";
@@ -110,6 +110,7 @@ async function solCommand(dev: Dev, files: string[], options: SolOptions) {
     await Solidity.build(dev, files, {
         clientLanguages: (options.clientLanguages || '').split(','),
         clientLevel: options.clientLevel || ClientCodeLevel.run,
+        jsModule: options.jsModule || JSModule.node,
     });
 }
 
@@ -117,6 +118,7 @@ async function genCommand(dev: Dev, files: string[], options: SolOptions) {
     await ClientCode.generate(files, {
         clientLanguages: (options.clientLanguages || '').split(','),
         clientLevel: options.clientLevel || ClientCodeLevel.run,
+        jsModule: options.jsModule || JSModule.node,
     });
 }
 
@@ -166,6 +168,15 @@ async function handleCommandLine(dev: Dev, args: string[]) {
             'client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of binary contract)',
             'deploy'
         )
+        .option(
+            '--js-module <module-type>',
+            "Java Script module type: " +
+            "`node` to use with `const FooContract = require('foo`)`, " +
+            "`nodeNoDefault` to use with `const {FooContract} = require('foo`)`, " +
+            "`es` to use with `import FooContract from 'foo'`, " +
+            "`esNoDefault` to use with `import {FooContract} from 'foo'` (`node` is a default option)",
+            'node'
+        )
         .action(command(solCommand));
 
     program
@@ -178,6 +189,15 @@ async function handleCommandLine(dev: Dev, args: string[]) {
             '-L, --client-level <client-level>',
             'client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of binary contract)',
             'deploy'
+        )
+        .option(
+            '--js-module <module-type>',
+            "Java Script module type: " +
+            "`node` to use with `const FooContract = require('foo`)`, " +
+            "`nodeNoDefault` to use with `const {FooContract} = require('foo`)`, " +
+            "`es` to use with `import FooContract from 'foo'`, " +
+            "`esNoDefault` to use with `import {FooContract} from 'foo'` (`node` is a default option)",
+            'node'
         )
         .action(command(genCommand));
 
