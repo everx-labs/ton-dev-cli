@@ -31,9 +31,9 @@
 		"cors": "^2.8.5",
 		"dockerode": "^2.5.8",
 		"express": "^4.17.1",
-		"handlebars": "^4.4.3",
-		"ton-client-js": "^0.14.0",
-		"ton-client-node-js": "^0.14.0"
+		"handlebars": "^4.5.2",
+		"ton-client-js": "^0.16.0",
+		"ton-client-node-js": "^0.16.0"
 	},
 	"devDependencies": {
 		"@babel/cli": "^7.6.0",

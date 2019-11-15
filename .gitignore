@@ -8,3 +8,5 @@
 /__tests__/job.sh
 /__tests__/test.code
 /__tests__/test.result
+/reinstall.sh
+/self-doc-gen.sh
