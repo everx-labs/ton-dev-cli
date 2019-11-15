@@ -14,12 +14,14 @@
  */
 // @flow
 
-import { ClientCodeLevel } from "../compilers/client-code";
+import { TONClient } from "ton-client-node-js";
+import { ClientCode, ClientCodeLevel, JSModule } from "../compilers/client-code";
 import { Solidity } from "../compilers/solidity";
 import { Dev } from "../dev";
 import { Network } from "../networks/networks";
 import type { NetworkConfig } from "../networks/networks";
-import { compilersWithNetworks, requiredNetworks } from "./options";
+import { web } from "../server/server";
+import { compilersWithNetworks } from "./options";
 import type {
     CleanOptions,
     RecreateOptions,
@@ -27,11 +29,13 @@ import type {
     SetupOptions, SolOptions,
     StartOptions,
     StopOptions,
-    UseOptions
+    UseOptions, WebOptions
 } from "./options";
 
 import { infoCommand } from "./info.js";
 import { spy } from "./spy";
+
+const USE_EXPERIMENTAL_FEATURES = false;
 
 const program = require('commander');
 
@@ -59,7 +63,7 @@ async function recreateCommand(dev: Dev, options: RecreateOptions) {
 
 async function cleanCommand(dev: Dev, options: CleanOptions) {
     const all = !options.compilers && !options.networks;
-    await dev.clean(options.compilers || all, options.networks || all);
+    await dev.clean(options.compilers || all, options.networks || all, options.containers);
 }
 
 async function setCommand(dev: Dev, names: string[], options: SetNetworkOptions) {
@@ -90,6 +94,14 @@ async function removeCommand(dev: Dev, names: string[]) {
     await dev.removeNetworks(dev.networksFromNames(names));
 }
 
+async function generateKeysCommand(_dev: Dev) {
+    const client = await TONClient.create({
+        servers: ['http://localhost']
+    });
+    const keys = await client.crypto.ed25519Keypair();
+    console.log(keys);
+}
+
 async function useCommand(dev: Dev, version: string, options: UseOptions) {
     await dev.useVersion(version, compilersWithNetworks(dev, options));
 }
@@ -98,11 +110,24 @@ async function solCommand(dev: Dev, files: string[], options: SolOptions) {
     await Solidity.build(dev, files, {
         clientLanguages: (options.clientLanguages || '').split(','),
         clientLevel: options.clientLevel || ClientCodeLevel.run,
+        jsModule: options.jsModule || JSModule.node,
+    });
+}
+
+async function genCommand(dev: Dev, files: string[], options: SolOptions) {
+    await ClientCode.generate(files, {
+        clientLanguages: (options.clientLanguages || '').split(','),
+        clientLevel: options.clientLevel || ClientCodeLevel.run,
+        jsModule: options.jsModule || JSModule.node,
     });
 }
 
 async function spyCommand(dev: Dev, networks: string[]) {
     await spy(dev, networks);
+}
+
+async function webConsoleCommand(dev: Dev, options: WebOptions) {
+    await web(dev, options);
 }
 
 const sharedOptions = {
@@ -128,15 +153,53 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .description('TON Labs development tools');
 
     program
-        .command('info').description('Show summary about dev environment')
+        .command('info', { isDefault: true }).description('Show summary about dev environment')
         .option('-a, --available', 'show available versions')
         .action(command(infoCommand));
 
     program
-        .command('setup').description('Setup dev environment')
-        .option(...sharedOptions.n)
-        .option(...sharedOptions.m)
-        .action(command(setupCommand));
+        .command('sol [files...]').description('Build solidity contract[s]')
+        .option(
+            '-l, --client-languages <languages>',
+            'generate client code for languages: "js", "rs" (multiple languages must be separated with comma)'
+        )
+        .option(
+            '-L, --client-level <client-level>',
+            'client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of binary contract)',
+            'deploy'
+        )
+        .option(
+            '--js-module <module-type>',
+            "Java Script module type: " +
+            "`node` to use with `const FooContract = require('foo`)`, " +
+            "`nodeNoDefault` to use with `const {FooContract} = require('foo`)`, " +
+            "`es` to use with `import FooContract from 'foo'`, " +
+            "`esNoDefault` to use with `import {FooContract} from 'foo'` (`node` is a default option)",
+            'node'
+        )
+        .action(command(solCommand));
+
+    program
+        .command('gen [files...]').description('Generate client code for contract[s]')
+        .option(
+            '-l, --client-languages <languages>',
+            'generate client code for languages: "js", "rs" (multiple languages must be separated with comma)'
+        )
+        .option(
+            '-L, --client-level <client-level>',
+            'client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of binary contract)',
+            'deploy'
+        )
+        .option(
+            '--js-module <module-type>',
+            "Java Script module type: " +
+            "`node` to use with `const FooContract = require('foo`)`, " +
+            "`nodeNoDefault` to use with `const {FooContract} = require('foo`)`, " +
+            "`es` to use with `import FooContract from 'foo'`, " +
+            "`esNoDefault` to use with `import {FooContract} from 'foo'` (`node` is a default option)",
+            'node'
+        )
+        .action(command(genCommand));
 
     program
         .command('start').description('Start dev containers')
@@ -163,9 +226,16 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .action(command(recreateCommand));
 
     program
+        .command('setup').description('Setup dev environment')
+        .option(...sharedOptions.n)
+        .option(...sharedOptions.m)
+        .action(command(setupCommand));
+
+    program
         .command('clean').description('Remove docker containers and images related to TON Dev')
-        .option('-n, --networks', 'clean compilers docker containers and images')
-        .option('-m, --compilers', 'clean local node docker containers and images')
+        .option('-n, --networks', 'clean local node docker containers and images')
+        .option('-m, --compilers', 'clean compilers docker containers and images')
+        .option('-c, --containers', 'clean containers only', false)
         .action(command(cleanCommand));
 
     program
@@ -190,14 +260,19 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .action(command(removeCommand));
 
     program
-        .command('sol [files...]').description('Build solidity contract[s]')
-        .option('-l, --client-languages <languages>', 'generate client code for languages: "js", "rs" (multiple languages must be separated with comma)')
-        .option('-L, --client-level <client-level>', 'client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of binary contract)')
-        .action(command(solCommand));
+        .command('keys').alias('k').description('Generate random Key Pair')
+        .action(command(generateKeysCommand));
 
-    // program
-    //     .command('spy [networks...]').description('Run network scanner')
-    //     .action(command(spyCommand));
+    if (USE_EXPERIMENTAL_FEATURES) {
+        program
+            .command('spy [networks...]').description('Run network scanner')
+            .action(command(spyCommand));
+
+        program
+            .command('web').description('Run web console')
+            .option('-p, --port <port>', 'host port to bound web console (default: 8800)', '8800')
+            .action(command(webConsoleCommand));
+    }
 
     // .command('update', `update ${dev.name} docker images`).action(action)
 
@@ -210,7 +285,11 @@ async function handleCommandLine(dev: Dev, args: string[]) {
             program.outputHelp();
         }
     } else {
-        await commandAction(...[dev, ...commandArgs]);
+        if (commandAction === infoCommand) {
+            const options = commandArgs[commandArgs.length - 1];
+            options.available = options.parent.available;
+        }
+        await commandAction(dev, ...commandArgs);
     }
 }
 

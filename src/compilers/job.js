@@ -18,14 +18,8 @@
 import { Dev } from "../dev";
 import type { DockerContainer } from "../utils/docker";
 import type { PathJoin } from "../utils/utils";
-import { bindPathJoinTo, ensureCleanDirectory, run } from "../utils/utils";
+import { bindPathJoinTo, run } from "../utils/utils";
 const os = require('os');
-const fs = require('fs');
-const path = require('path');
-
-export type CompilersJobOptions = {
-    keepContent?: boolean,
-}
 
 class CompilersJob {
     dev: Dev;
@@ -45,20 +39,9 @@ class CompilersJob {
         this.guestPath = dstPath;
     }
 
-    static async create(
-        dev: Dev,
-        options?: CompilersJobOptions
-    ) {
-        const keepContent = !!(options && options.keepContent);
-        const container = await dev.docker.ensureRunning(dev.compilers);
-        const name = process.cwd().replace(/[\\/:]/g, '_');
-        const hostPath = bindPathJoinTo(path.join(dev.compilers.mountSource, name));
-        const guestPath = bindPathJoinTo(`${dev.compilers.mountDestination}/${name}`, '/');
-        if (keepContent) {
-            fs.mkdirSync(hostPath());
-        } else {
-            ensureCleanDirectory(hostPath());
-        }
+    static async create(dev: Dev, path: string) {
+        const hostPath = bindPathJoinTo(path);
+        const {container, guestPath} = await dev.getCompilersMountedTo(hostPath());
         return new CompilersJob(dev, container, hostPath, guestPath);
     }
 

@@ -40,6 +40,7 @@ export type RecreateOptions = CompilersWithNetworksOptions;
 export type CleanOptions = {
     networks: boolean,
     compilers: boolean,
+    containers: boolean,
 }
 
 export type UseOptions = CompilersWithNetworksOptions;
@@ -52,6 +53,11 @@ export type SetNetworkOptions = {
 export type SolOptions = {
     clientLanguages?: string,
     clientLevel?: string,
+    jsModule?: string,
+}
+
+export type WebOptions = {
+    port: string,
 }
 
 function findNetworks(dev: Dev, options: NetworksOptions): ?(Network[]) {

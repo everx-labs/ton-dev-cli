@@ -18,12 +18,14 @@ import { Compilers } from "./compilers/compilers";
 import type { CompilersConfig } from "./compilers/compilers";
 import type { NetworkConfig } from "./networks/networks";
 import { Network } from "./networks/networks";
-import type { ContainerDef, DContainerInfo, DImageInfo } from "./utils/docker";
+import type { ContainerDef, DContainerInfo, DImageInfo, DMount, DockerContainer } from "./utils/docker";
 import { ContainerStatus, DevDocker } from "./utils/docker";
 import { texts } from "./utils/texts";
-import { breakWords, inputLine, tonlabsHomePath, version } from "./utils/utils";
+import type { PathJoin } from "./utils/utils";
+import { bindPathJoinTo, breakWords, inputLine, tonlabsHomePath, version } from "./utils/utils";
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 type DevConfig = {
@@ -34,6 +36,10 @@ type DevConfig = {
 export type CompilersWithNetworks = {
     compilers: boolean,
     networks: Network[],
+}
+
+function excludeCompilers(dev: Dev, defs: ContainerDef[]): ContainerDef[] {
+    return defs.filter(x => x !== dev.compilers);
 }
 
 class Dev {
@@ -125,7 +131,7 @@ class Dev {
     }
 
     async start(source: CompilersWithNetworks) {
-        await this.docker.startupContainers(this.getDefs(source), ContainerStatus.running);
+        await this.docker.startupContainers(excludeCompilers(this, this.getDefs(source)), ContainerStatus.running);
     }
 
     async stop(source: CompilersWithNetworks) {
@@ -135,17 +141,17 @@ class Dev {
     async restart(source: CompilersWithNetworks) {
         const defs = this.getDefs(source);
         await this.docker.shutdownContainers(defs, ContainerStatus.created);
-        await this.docker.startupContainers(defs, ContainerStatus.running);
+        await this.docker.startupContainers(excludeCompilers(this, defs), ContainerStatus.running);
     }
 
     async recreate(source: CompilersWithNetworks) {
         const defs = this.getDefs(source);
         await this.docker.shutdownContainers(defs, ContainerStatus.missing);
-        await this.docker.startupContainers(defs, ContainerStatus.created);
+        await this.docker.startupContainers(excludeCompilers(this, defs), ContainerStatus.created);
     }
 
 
-    async clean(compilers: boolean, networks: boolean) {
+    async clean(compilers: boolean, networks: boolean, containersOnly: boolean) {
         const imageMatches = [];
         if (compilers) {
             imageMatches.push(Compilers.imagePrefix);
@@ -153,7 +159,7 @@ class Dev {
         if (networks) {
             imageMatches.push(Network.imagePrefix);
         }
-        await this.docker.removeImages(imageMatches);
+        await this.docker.removeImages(imageMatches, containersOnly);
     }
 
     async useVersion(version: string, source: CompilersWithNetworks) {
@@ -171,8 +177,40 @@ class Dev {
             network.setConfig(config);
         });
         this.saveConfig();
-        await this.docker.startupContainers(defs, ContainerStatus.running);
+        await this.docker.startupContainers(excludeCompilers(this, defs), ContainerStatus.running);
     }
+
+    // Compilers
+
+    hostPathToMountSource(hostPath: string): string {
+        if (os.platform() !== 'win32') {
+            return hostPath.toLowerCase();
+        }
+        return `/host_mnt/${hostPath.replace(/:\\|\\/g, '/').toLowerCase()}`;
+    }
+
+    async getCompilersMountedTo(hostPath: string): Promise<{container: DockerContainer, guestPath: PathJoin}> {
+        let info = (await this.docker.getContainerInfos()).find((info: DContainerInfo) => {
+            return DevDocker.containersImageMatched(info, this.compilers.requiredImage)
+                && info.Mounts.find((mount: DMount) => mount.Source.toLowerCase() === this.hostPathToMountSource(hostPath));
+        });
+        let container: DockerContainer;
+        if (info) {
+            container = this.docker.client.getContainer(info.Id);
+            if (!DevDocker.isRunning(info)) {
+                await container.start();
+            }
+        } else {
+            container = await this.compilers.createContainerMountedTo(hostPath, this.docker);
+            await container.start();
+        }
+        return {
+            container,
+            guestPath: bindPathJoinTo(this.compilers.mountDestination, '/')
+        };
+    }
+
+    // Networks
 
     ensureNetwork(name: string): Network {
         const existing = this.networks.find(x => x.name.toLowerCase() === name.toLowerCase());

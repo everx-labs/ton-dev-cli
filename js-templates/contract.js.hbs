@@ -1,0 +1,155 @@
+{{!--
+
+Result Type Doc
+
+--}}
+{{#*inline "resultTypeDoc"}}
+{{#if hasOutputs}}
+    /**
+     * @typedef {{@root.className}}_{{name}}
+     * @type {object}
+{{#each outputs}}
+     * @property {{LB}}{{jsType}}{{RB}} {{name}} {{#if isSameJsType}}{{else}} ({{type}}){{/if}}
+{{/each}}
+     */
+
+{{/if}}
+{{/inline}}
+{{!--
+
+    Input Doc
+
+--}}
+{{#*inline "inputDoc"}}
+{{#if hasInputs}}
+     * @param {object} params
+{{#each inputs}}
+     * @param {{LB}}{{jsType}}{{RB}} params.{{name}}{{#if isSameJsType}}{{else}} ({{type}}){{/if}}
+{{/each}}
+{{/if}}
+{{/inline}}
+{{!--
+
+    Function Doc
+
+--}}
+{{#*inline "funcDoc"}}
+    /**
+{{> inputDoc }}
+{{#if hasOutputs}}
+     * @return {{LB}}Promise.<{{@root.className}}_{{name}}>{{RB}}
+{{/if}}
+     */
+{{/inline}}
+{{!--
+
+    Contract
+
+--}}
+//
+// This file was generated using TON Labs developer tools.
+//
+
+const abi = {{abiJson}};
+
+const pkg = {
+    abi,
+    imageBase64: '{{imageBase64}}',
+};
+
+{{#if jsModuleEs}}export {{#if jsModuleEsDefault}}default {{/if}}{{/if}}class {{className}} {
+    /**
+    * @param {TONClient} client
+    * @param {string} address can be null if contract will be deployed
+    * @param {TONKeyPairData} keys
+    */
+    constructor(client, address, keys) {
+        this.client = client;
+        this.address = address;
+        this.keys = keys;
+        this.package = pkg;
+        this.abi = abi;
+    }
+
+{{#if isDeploy}}
+{{#with constructor}}
+    /**
+{{#if hasInputs}}
+     * @param {object} constructorParams
+{{#each inputs}}
+     * @param {{LB}}{{jsType}}{{RB}} constructorParams.{{name}}{{#if isSameJsType}}{{else}} ({{type}}){{/if}}
+{{/each}}
+{{/if}}
+{{#if hasData}}
+     * @param {object} initParams
+{{#each data}}
+     * @param {{LB}}{{jsType}}{{RB}} initParams.{{name}}{{#if isSameJsType}}{{else}} ({{type}}){{/if}}
+{{/each}}
+{{/if}}
+     */
+    async deploy({{#if hasInputs}}constructorParams{{/if}}{{#if hasInputsAndData}}, {{/if}}{{#if hasData}}initParams{{/if}}) {
+        if (!this.keys) {
+            this.keys = await this.client.crypto.ed25519Keypair();
+        }
+        this.address = (await this.client.contracts.deploy({
+            package: pkg,
+            constructorParams{{#if hasInputs}}{{else}}: {}{{/if}},
+            initParams{{#if hasData}}{{else}}: {}{{/if}},
+            keyPair: this.keys,
+        })).address;
+    }
+{{/with}}
+{{/if}}
+
+    /**
+    * @param {string} functionName
+    * @param {object} input
+    * @return {Promise.<object>}
+    */
+    async run(functionName, input) {
+        const result = await this.client.contracts.run({
+            address: this.address,
+            functionName,
+            abi,
+            input,
+            keyPair: this.keys,
+        });
+        return result.output;
+    }
+
+   /**
+    * @param {string} functionName
+    * @param {object} input
+    * @return {Promise.<object>}
+    */
+    async runLocal(functionName, input) {
+        const result = await this.client.contracts.runLocal({
+            address: this.address,
+            functionName,
+            abi,
+            input,
+            keyPair: this.keys,
+        });
+        return result.output;
+    }
+
+{{#each functions}}
+{{> resultTypeDoc}}
+{{> funcDoc}}
+    {{name}}({{#if hasInputs}}params{{/if}}) {
+        return this.run('{{name}}', {{#if hasInputs}}params{{else}}{}{{/if}});
+    }
+
+{{> funcDoc}}
+    {{name}}Local({{#if hasInputs}}params{{/if}}) {
+        return this.runLocal('{{name}}', {{#if hasInputs}}params{{else}}{}{{/if}});
+    }
+
+{{/each}}
+}
+
+{{className}}.package = pkg;
+{{#if jsModuleNode}}
+
+module.exports = {{#unless jsModuleNodeDefault}}{{LB}} {{/unless}}{{className}}{{#unless jsModuleNodeDefault}} {{RB}}{{/unless}};
+{{/if}}

@@ -23,12 +23,19 @@ export type DImageInfo = {
     RepoDigests: string[],
 }
 
+export type DMount = {
+    Destination: string,
+    Source: string,
+    Type: 'bind' | 'volume' | 'tmpfs',
+}
+
 export type DContainerInfo = {
     Id: string,
     Names: string[],
     Image: string,
     ImageID: string,
     State: string,
+    Mounts: DMount[],
 }
 
 export type DContainerExecOptions = {
@@ -69,12 +76,6 @@ export type DockerContainer = {
 
 export type DockerImage = {
     remove(): Promise<void>,
-}
-
-export type DMount = {
-    Target: string,
-    Source: string,
-    Type: 'bind' | 'volume' | 'tmpfs',
 }
 
 export type DPortBindings = {
@@ -187,7 +188,7 @@ class DevDocker {
         return versionToNumber(version.Version);
     }
 
-    async removeImages(nameMatches: string[]): Promise<void> {
+    async removeImages(nameMatches: string[], containersOnly: boolean): Promise<void> {
         // Stop and remove containers that belongs to images
         const containerInfos = (await this.getContainerInfos()).filter((info) => {
             return nameMatches.find(match => DevDocker.containersImageMatched(info, match));
@@ -201,6 +202,9 @@ class DevDocker {
             }
             await container.remove();
             progressDone();
+        }
+        if(containersOnly) {
+            return;
         }
         // Remove images
         const imageInfos = (await this.getImageInfos()).filter((info) => {
@@ -258,7 +262,7 @@ class DevDocker {
         if (!info) {
             return;
         }
-        if (DevDocker.isRunning(info) && downTo < ContainerStatus.running) {
+        if (downTo < ContainerStatus.running && DevDocker.isRunning(info)) {
             progress(`Stopping [${def.containerName}]`);
             await this.client.getContainer(info.Id).stop();
             progressDone();
@@ -272,24 +276,24 @@ class DevDocker {
         }
     }
 
-    async ensureImage(def: ContainerDef) {
-        if (!(await this.findImageInfo(def.requiredImage))) {
-            await this.pull(def.requiredImage);
+    async ensureImage(requiredImage: string) {
+        if (!(await this.findImageInfo(requiredImage))) {
+            await this.pull(requiredImage);
             this.dropCache();
         }
     }
 
     async startupContainer(def: ContainerDef, upTo: ContainerStatusType) {
-        await this.ensureImage(def);
+        await this.ensureImage(def.requiredImage);
         let info: ?DContainerInfo = await this.findContainerInfo(def.containerName);
-        if (!info && upTo >= ContainerStatus.created) {
+        if (upTo >= ContainerStatus.created && !info) {
             progress(`Creating ${def.containerName}`);
             await def.createContainer(this);
             progressDone();
             this.dropCache();
             info = await this.findContainerInfo(def.containerName);
         }
-        if (info && !DevDocker.isRunning(info) && upTo >= ContainerStatus.running) {
+        if (upTo >= ContainerStatus.running && info && !DevDocker.isRunning(info)) {
             progress(`Starting ${def.containerName}`);
             await this.client.getContainer(info.Id).start();
             progressDone();

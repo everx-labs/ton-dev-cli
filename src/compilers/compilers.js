@@ -13,13 +13,12 @@
  *
  */
 // @flow
-const fs = require('fs');
 import type { ContainerDef, DockerContainer } from "../utils/docker";
 import { DevDocker } from "../utils/docker";
-import { tonlabsHomePath, userIdentifier } from "../utils/utils";
+import { userIdentifier } from "../utils/utils";
 
 export type CompilersConfig = {
-    version: string
+    version: string,
 }
 
 
@@ -33,35 +32,41 @@ export class Compilers implements ContainerDef {
     version: string;
     requiredImage: string;
     containerName: string;
-    mountSource: string;
     mountDestination: string;
 
     constructor(config: CompilersConfig) {
         this.setConfig(config);
     }
 
-
-
     setConfig(config: CompilersConfig) {
         this.version = config.version;
         this.requiredImage = `${Compilers.imagePrefix}:${config.version}`;
         this.containerName = `${Compilers.containerPrefix}-${userIdentifier}`;
-        this.mountSource = tonlabsHomePath('compilers', 'projects');
         this.mountDestination = '/projects';
     }
 
     getConfig(): CompilersConfig {
         return {
-            version: this.version
+            version: this.version,
         }
     }
 
     async createContainer(docker: DevDocker): Promise<DockerContainer> {
-        if (!fs.existsSync(this.mountSource)) {
-            fs.mkdirSync(this.mountSource, ({ recursive: true }: any));
-        }
+        throw new Error('Internal error: invalid call to Compilers.createContainer');
+    }
+
+    async createContainerMountedTo(hostPath: string, docker: DevDocker): Promise<DockerContainer> {
+        await docker.ensureImage(this.requiredImage);
+        const existing = await docker.getContainerInfos();
+        let name = '';
+        let index = 0;
+        do {
+            name = `${this.containerName}${index > 0 ? `-${index}` : ''}`;
+            index += 1;
+        } while (existing.find(x => DevDocker.hasName(x, name)));
+        docker.dropCache();
         return docker.client.createContainer({
-            name: this.containerName,
+            name,
             interactive: true,
             Image: this.requiredImage,
             Tty: true,
@@ -70,7 +75,7 @@ export class Compilers implements ContainerDef {
                 Mounts: [
                     {
                         Type: 'bind',
-                        Source: this.mountSource,
+                        Source: hostPath,
                         Target: this.mountDestination,
                     },
                 ],
