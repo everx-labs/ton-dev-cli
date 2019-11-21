@@ -33,7 +33,7 @@ sudo npm install -g ton-dev-cli
 
 ## Invocation
 
-`ton-dev-cli` package installs its executable `tondev` globally, so you could 
+`ton-dev-cli` package installs  globally and places its executable `tondev` into system path, so you could 
 use it everywhere in your file system.
 
 Type:
@@ -52,8 +52,8 @@ In order to get started, run: `tondev setup`
 
 The command triggers Docker image pull from DockerHub registry and launches the corresponding containers:
 
-- tonlabs/compilers-\<local user name\> that is used for building solidity contracts
-- tonlabs/local-node-\<local user name\> is a local TON node container runs compiled contracts.
+- tonlabs-compilers-\<local user name\> that is used for building solidity contracts
+- tonlabs-local-node-\<local user name\> is a local TON node container runs compiled contracts.
 
 You can specify additional options to customize the installation:
 - `-n`, `--networks`
