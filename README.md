@@ -166,7 +166,7 @@ Generate random Key Pair
 ---
 
 
-## Full help for ton-dev-cli version: 0.16.0
+## Complete help for ton-dev-cli version: 0.16.0
 
 ### tondev -h
 
@@ -198,7 +198,7 @@ Commands:
   keys|k                      Generate random Key Pair
 ```
 
-## subcommand help
+## Subcommands help
 
 ### info
 

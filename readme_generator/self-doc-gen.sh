@@ -7,7 +7,7 @@ which ${TON} &>/dev/null || {
     exit 1
 }
 
-echo "## Full help for ton-dev-cli version: $( ${TON} -V )"
+echo "## Complete help for `ton-dev-cli` version: $( ${TON} -V )"
 echo
 echo "### ${TON} -h"
 echo
@@ -17,7 +17,7 @@ ${TON} -h
 echo '```'
 
 echo
-echo "## subcommand help"; 
+echo "## Subcommands help"; 
 
 for cmd in $( ${TON} -h | grep -A5000 -m1 -e '^Commands:' | tail -n+2 | sed 's/|/ /' | cut -f 3 -d " " - ); do
     echo
