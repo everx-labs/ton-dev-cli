@@ -13,6 +13,8 @@
  *
  */
 
+// @flow
+
 import { parseFileArg } from "../utils/utils";
 import Handlebars from 'handlebars';
 import { parseSolidityFileArg } from "./solidity";
@@ -56,7 +58,7 @@ export const ClientCodeLanguage = {
     rs: 'rs',
 };
 
-export type ClientCodeLanguageType = $Keys<typeof ClientCodeLanguage>;
+export type ClientCodeLanguageType = string;
 
 export const JSModule = {
     node: 'node',
@@ -78,7 +80,7 @@ export class ClientCode {
     static async generate(files: string[], options: ClientCodeOptions) {
         const generateLanguage = async (
             language: ClientCodeLanguageType,
-            generator: (options: ClientCodeOptions) => Promise<void>
+            generator: (files: string[], options: ClientCodeOptions) => Promise<void>
         ) => {
             if (options.clientLanguages.find(x => x.toLowerCase() === language.toLowerCase())) {
                 await generator.bind(ClientCode)(files, options);
@@ -90,7 +92,7 @@ export class ClientCode {
     }
 
     static getTemplateContext(fileArg: string, options: ClientCodeOptions): any {
-        const file = parseSolidityFileArg(fileArg);
+        const file = parseSolidityFileArg(fileArg, false);
         const { dir, name } = file;
         const imageBase64 = options.clientLevel === ClientCodeLevel.deploy
             ? fs.readFileSync(dir(name.tvc)).toString('base64')
@@ -159,7 +161,7 @@ export class ClientCode {
     }
 
     static async generateJavaScriptFile(file: string, options: ClientCodeOptions) {
-        const { dir, base } = parseFileArg(file, '.sol');
+        const { dir, base } = parseFileArg(file, '.sol', false);
         const js = await applyTemplate(jsContractTemplate, ClientCode.getTemplateContext(file, options));
         fs.writeFileSync(dir(`${base}Contract.js`), js, { encoding: 'utf8' });
     }

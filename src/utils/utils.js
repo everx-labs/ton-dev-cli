@@ -229,7 +229,7 @@ export type FileArg = {
     name: string
 }
 
-function parseFileArg(fileArg: string, ext: string): FileArg {
+function parseFileArg(fileArg: string, ext: string, fileMustExists: boolean): FileArg {
     if (os.platform() === 'darwin' && fileArg.startsWith('~/')) {
         fileArg = path.join(os.homedir(), fileArg.substr(2));
     }
@@ -242,7 +242,7 @@ function parseFileArg(fileArg: string, ext: string): FileArg {
         base,
         name
     };
-    if (!fs.existsSync(result.dir(name))) {
+    if (fileMustExists && !fs.existsSync(result.dir(name))) {
         console.error(texts.sourceFileNotFound(name));
         process.exit(1);
     }

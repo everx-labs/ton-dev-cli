@@ -39,8 +39,8 @@ type SolidityFileArg = {
     },
 }
 
-export function parseSolidityFileArg(fileArg: string): SolidityFileArg {
-    const parsed = parseFileArg(fileArg, '.sol');
+export function parseSolidityFileArg(fileArg: string, fileMustExists: boolean): SolidityFileArg {
+    const parsed = parseFileArg(fileArg, '.sol', fileMustExists);
     return {
         dir: parsed.dir,
         name: {
@@ -73,7 +73,7 @@ export class Solidity {
 
     async build() {
         for (let i = 0; i < this.files.length; i += 1) {
-            const file = parseSolidityFileArg(this.files[i]);
+            const file = parseSolidityFileArg(this.files[i], true);
             const job = await CompilersJob.create(this.dev, file.dir());
             this.prepareBuildBatch(file, job);
             await job.run('sh', job.guestPath('job.sh'));
