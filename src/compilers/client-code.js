@@ -98,7 +98,12 @@ export class ClientCode {
             ? fs.readFileSync(dir(name.tvc)).toString('base64')
             : '';
         const abiJson = fs.readFileSync(dir(name.abi)).toString().trimRight();
-        const abi = JSON.parse(abiJson);
+        const abi = {
+            functions: [],
+            data: [],
+            ...JSON.parse(abiJson)
+        };
+
         const className = `${name.base[0].toUpperCase()}${name.base.substr(1)}Contract`;
         const isDeploy = (options.clientLevel || 'deploy') === 'deploy';
 
@@ -125,6 +130,8 @@ export class ClientCode {
         const funContext = (f) => {
             return {
                 ...f,
+                hasData: false,
+                hasInputsAndData: false,
                 hasInputs: f.inputs.length > 0,
                 hasOutputs: f.outputs.length > 0,
                 inputs: f.inputs.map(varContext),
@@ -132,13 +139,17 @@ export class ClientCode {
             }
         };
 
-        const constructor = funContext(abi.functions.find(x => x.name === 'constructor'));
+        const constructor = funContext(abi.functions.find(x => x.name === 'constructor') || {
+            name: 'constructor',
+            inputs: [],
+            outputs: [],
+            data: [],
+        });
         constructor.hasData = abi.data.length > 0;
         constructor.hasInputsAndData = constructor.hasInputs && constructor.hasData;
         constructor.data = abi.data.map(varContext);
 
         const functions = abi.functions.filter(x => x.name !== 'constructor').map(funContext);
-
         return {
             imageBase64,
             abiJson,
