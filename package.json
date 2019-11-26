@@ -32,8 +32,8 @@
 		"dockerode": "^2.5.8",
 		"express": "^4.17.1",
 		"handlebars": "^4.5.2",
-		"ton-client-js": "^0.16.0",
-		"ton-client-node-js": "^0.16.0"
+		"ton-client-js": "^0.17.0",
+		"ton-client-node-js": "^0.17.0"
 	},
 	"devDependencies": {
 		"@babel/cli": "^7.6.0",

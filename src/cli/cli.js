@@ -14,14 +14,14 @@
  */
 // @flow
 
-import { TONClient } from "ton-client-node-js";
-import { ClientCode, ClientCodeLevel, JSModule } from "../compilers/client-code";
-import { Solidity } from "../compilers/solidity";
-import { Dev } from "../dev";
-import { Network } from "../networks/networks";
-import type { NetworkConfig } from "../networks/networks";
-import { web } from "../server/server";
-import { compilersWithNetworks } from "./options";
+import {TONClient} from "ton-client-node-js";
+import {ClientCode, ClientCodeLevel, JSModule} from "../compilers/client-code";
+import {Solidity} from "../compilers/solidity";
+import {Dev} from "../dev";
+import {Network} from "../networks/networks";
+import type {NetworkConfig} from "../networks/networks";
+import {web} from "../server/server";
+import {compilersWithNetworks} from "./options";
 import type {
     CleanOptions,
     RecreateOptions,
@@ -29,11 +29,11 @@ import type {
     SetupOptions, SolOptions,
     StartOptions,
     StopOptions,
-    UseOptions, WebOptions
+    UseOptions, WebOptions,
 } from "./options";
 
-import { infoCommand } from "./info.js";
-import { spy } from "./spy";
+import {infoCommand} from "./info.js";
+import {spy} from "./spy";
 
 const USE_EXPERIMENTAL_FEATURES = false;
 
@@ -96,10 +96,43 @@ async function removeCommand(dev: Dev, names: string[]) {
 
 async function generateKeysCommand(_dev: Dev) {
     const client = await TONClient.create({
-        servers: ['http://localhost']
+        servers: ['http://localhost'],
     });
     const keys = await client.crypto.ed25519Keypair();
     console.log(keys);
+}
+
+async function convertAddress(_dev: Dev, addr) {
+    const client = await TONClient.create({
+        servers: ['http://localhost'],
+    });
+    const showBase64 = async (bounce, test, url) => {
+        const converted = await client.contracts.convertAddress({
+            address: addr,
+            convertTo: 'Base64',
+            base64Params: {
+                bounce,
+                test,
+                url,
+            },
+        });
+        const flags = [
+            bounce ? 'bounce' : '',
+            test ? 'test' : 'main',
+            url ? 'url' : '',
+        ]
+            .filter(x => x !== '')
+            .join(', ');
+        console.log(`${flags} = ${converted.address}`);
+    };
+    await showBase64(false, false, false);
+    await showBase64(false, false, true);
+    await showBase64(false, true, false);
+    await showBase64(false, true, true);
+    await showBase64(true, false, false);
+    await showBase64(true, false, true);
+    await showBase64(true, true, false);
+    await showBase64(true, true, true);
 }
 
 async function useCommand(dev: Dev, version: string, options: UseOptions) {
@@ -153,7 +186,7 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .description('TON Labs development tools');
 
     program
-        .command('info', { isDefault: true }).description('Show summary about dev environment')
+        .command('info', {isDefault: true}).description('Show summary about dev environment')
         .option('-a, --available', 'show available versions')
         .action(command(infoCommand));
 
@@ -161,12 +194,12 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .command('sol [files...]').description('Build solidity contract[s]')
         .option(
             '-l, --client-languages <languages>',
-            'generate client code for languages: "js", "rs" (multiple languages must be separated with comma)'
+            'generate client code for languages: "js", "rs" (multiple languages must be separated with comma)',
         )
         .option(
             '-L, --client-level <client-level>',
             'client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of binary contract)',
-            'deploy'
+            'deploy',
         )
         .option(
             '--js-module <module-type>',
@@ -175,7 +208,7 @@ async function handleCommandLine(dev: Dev, args: string[]) {
             "`nodeNoDefault` to use with `const {FooContract} = require('foo`)`, " +
             "`es` to use with `import FooContract from 'foo'`, " +
             "`esNoDefault` to use with `import {FooContract} from 'foo'` (`node` is a default option)",
-            'node'
+            'node',
         )
         .action(command(solCommand));
 
@@ -183,12 +216,12 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .command('gen [files...]').description('Generate client code for contract[s]')
         .option(
             '-l, --client-languages <languages>',
-            'generate client code for languages: "js", "rs" (multiple languages must be separated with comma)'
+            'generate client code for languages: "js", "rs" (multiple languages must be separated with comma)',
         )
         .option(
             '-L, --client-level <client-level>',
             'client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of binary contract)',
-            'deploy'
+            'deploy',
         )
         .option(
             '--js-module <module-type>',
@@ -197,7 +230,7 @@ async function handleCommandLine(dev: Dev, args: string[]) {
             "`nodeNoDefault` to use with `const {FooContract} = require('foo`)`, " +
             "`es` to use with `import FooContract from 'foo'`, " +
             "`esNoDefault` to use with `import {FooContract} from 'foo'` (`node` is a default option)",
-            'node'
+            'node',
         )
         .action(command(genCommand));
 
@@ -247,7 +280,10 @@ async function handleCommandLine(dev: Dev, args: string[]) {
     program
         .command('set [network...]').description('Set network[s] options')
         .option('-p, --port <port>', 'host port to bound local node')
-        .option('-d, --db-port <binding>', 'host port to bound local nodes Arango DB ("bind" to use default Arango DB port, "unbind" to unbind Arango DB port)')
+        .option(
+            '-d, --db-port <binding>',
+            'host port to bound local nodes Arango DB ("bind" to use default Arango DB port, "unbind" to unbind Arango DB port)',
+        )
         .option('-n, --new-name <name>', 'set new name for network')
         .action(command(setCommand));
 
@@ -262,6 +298,10 @@ async function handleCommandLine(dev: Dev, args: string[]) {
     program
         .command('keys').alias('k').description('Generate random Key Pair')
         .action(command(generateKeysCommand));
+
+    program
+        .command('addr <addr>').alias('a').description('Convert address')
+        .action(command(convertAddress));
 
     if (USE_EXPERIMENTAL_FEATURES) {
         program
@@ -293,4 +333,4 @@ async function handleCommandLine(dev: Dev, args: string[]) {
     }
 }
 
-export { handleCommandLine };
+export {handleCommandLine};
