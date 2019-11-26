@@ -106,6 +106,13 @@ async function convertAddress(_dev: Dev, addr) {
     const client = await TONClient.create({
         servers: ['http://localhost'],
     });
+    const showHex = async () => {
+        const converted = await client.contracts.convertAddress({
+            address: addr,
+            convertTo: 'Hex',
+        });
+        console.log(`hex = ${converted.address}`);
+    };
     const showBase64 = async (bounce, test, url) => {
         const converted = await client.contracts.convertAddress({
             address: addr,
@@ -125,6 +132,7 @@ async function convertAddress(_dev: Dev, addr) {
             .join(', ');
         console.log(`${flags} = ${converted.address}`);
     };
+    await showHex();
     await showBase64(false, false, false);
     await showBase64(false, false, true);
     await showBase64(false, true, false);
