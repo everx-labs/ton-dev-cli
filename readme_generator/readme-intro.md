@@ -1,4 +1,4 @@
-# __ton-dev-cli__
+# ton-dev-cli
 
 TON Labs Dev Command Line Tool
 <br/>
@@ -33,17 +33,17 @@ sudo npm install -g ton-dev-cli
 
 ## Invocation
 
-`ton-dev-cli` package installs  globally and places its executable `tondev` into system path, so you could 
-use it everywhere in your file system.
+While installed globally, `ton-dev-cli` package places its executable `tondev` into system path, so you could 
+use it everywhere in your file system as a main command to invoke the tool.
 
-Type:
-- `tondev` `info` (or just `tondev`) - to see current status  
-- `tondev` `-V` - to see `ton-dev-cli` version  
-- `tondev` `-a` - to see versions of the compilers and node containers available in DockerHub registry  
-- `tondev` `-h` or `tondev` `--help` for the help about usage, options and subcommands  
+Type:  
+`tondev` `info` (or just `tondev`) - to see current status  
+`tondev` `-V` - to see `ton-dev-cli` version  
+`tondev` `-a` - to see versions of the compilers and node containers available in DockerHub registry  
+`tondev` `-h` or `tondev` `--help` for the help about usage, options and subcommands  
 
 
->__You can see additional help about subcommands by using `tondev <subcommand> -h` or `tondev <subcommand> --help` command!__
+>_You can use `-h` or `--help` option with any subcommand to get extended help about its usage. Also full help content is included in this document below._
 
 
 ## Initialization

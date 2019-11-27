@@ -1,4 +1,4 @@
-# __ton-dev-cli__
+# ton-dev-cli
 
 TON Labs Dev Command Line Tool
 <br/>
@@ -33,17 +33,17 @@ sudo npm install -g ton-dev-cli
 
 ## Invocation
 
-`ton-dev-cli` package installs  globally and places its executable `tondev` into system path, so you could 
-use it everywhere in your file system.
+While installed globally, `ton-dev-cli` package places its executable `tondev` into system path, so you could 
+use it everywhere in your file system as a main command to invoke the tool.
 
-Type:
-- `tondev` `info` (or just `tondev`) - to see current status  
-- `tondev` `-V` - to see `ton-dev-cli` version  
-- `tondev` `-a` - to see versions of the compilers and node containers available in DockerHub registry  
-- `tondev` `-h` or `tondev` `--help` for the help about usage, options and subcommands  
+Type:  
+`tondev` `info` (or just `tondev`) - to see current status  
+`tondev` `-V` - to see `ton-dev-cli` version  
+`tondev` `-a` - to see versions of the compilers and node containers available in DockerHub registry  
+`tondev` `-h` or `tondev` `--help` for the help about usage, options and subcommands  
 
 
->__You can see additional help about subcommands by using `tondev <subcommand> -h` or `tondev <subcommand> --help` command!__
+>_You can use `-h` or `--help` option with any subcommand to get extended help about its usage. Also full help content is included in this document below._
 
 
 ## Initialization
@@ -166,9 +166,9 @@ Generate random Key Pair
 ---
 
 
-## Complete help for ton-dev-cli version: 0.16.0
+## Complete help for version: 0.17.0
 
-### tondev -h
+#### `tondev -help`
 
 ```
 Usage: tondev [options] [command]
@@ -198,9 +198,9 @@ Commands:
   keys|k                      Generate random Key Pair
 ```
 
-## Subcommands help
+### _subcommands help:_
 
-### info
+#### `tondev info --help`
 
 ```
 Usage: tondev info [options]
@@ -212,7 +212,7 @@ Options:
   -h, --help       output usage information
 ```
 
-### sol
+#### `tondev sol --help`
 
 ```
 Usage: tondev sol [options] [files...]
@@ -239,7 +239,7 @@ Options:
   -h, --help                          output usage information
 ```
 
-### gen
+#### `tondev gen --help`
 
 ```
 Usage: tondev gen [options] [files...]
@@ -266,7 +266,7 @@ Options:
   -h, --help                          output usage information
 ```
 
-### start
+#### `tondev start --help`
 
 ```
 Usage: tondev start [options]
@@ -280,7 +280,7 @@ Options:
   -h, --help              output usage information
 ```
 
-### stop
+#### `tondev stop --help`
 
 ```
 Usage: tondev stop [options]
@@ -294,7 +294,7 @@ Options:
   -h, --help              output usage information
 ```
 
-### restart
+#### `tondev restart --help`
 
 ```
 Usage: tondev restart [options]
@@ -308,7 +308,7 @@ Options:
   -h, --help              output usage information
 ```
 
-### recreate
+#### `tondev recreate --help`
 
 ```
 Usage: tondev recreate [options]
@@ -322,7 +322,7 @@ Options:
   -h, --help              output usage information
 ```
 
-### setup
+#### `tondev setup --help`
 
 ```
 Usage: tondev setup [options]
@@ -336,7 +336,7 @@ Options:
   -h, --help              output usage information
 ```
 
-### clean
+#### `tondev clean --help`
 
 ```
 Usage: tondev clean [options]
@@ -350,7 +350,7 @@ Options:
   -h, --help        output usage information
 ```
 
-### use
+#### `tondev use --help`
 
 ```
 Usage: tondev use [options] <version>
@@ -364,7 +364,7 @@ Options:
   -h, --help              output usage information
 ```
 
-### set
+#### `tondev set --help`
 
 ```
 Usage: tondev set [options] [network...]
@@ -380,7 +380,7 @@ Options:
   -h, --help               output usage information
 ```
 
-### add
+#### `tondev add --help`
 
 ```
 Usage: tondev add [options] [network...]
@@ -391,7 +391,7 @@ Options:
   -h, --help  output usage information
 ```
 
-### remove
+#### `tondev remove --help`
 
 ```
 Usage: tondev remove|rm [options] [network...]
@@ -402,7 +402,7 @@ Options:
   -h, --help  output usage information
 ```
 
-### keys
+#### `tondev keys --help`
 
 ```
 Usage: tondev keys|k [options]
