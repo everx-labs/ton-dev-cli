@@ -106,14 +106,17 @@ async function convertAddress(_dev: Dev, addr) {
     const client = await TONClient.create({
         servers: ['http://localhost'],
     });
+    const showConverted = (title, converted) => {
+        console.log(`${converted.address === addr ? '✓' : ' '} ${title} = ${converted.address}`);
+    };
     const showHex = async () => {
         const converted = await client.contracts.convertAddress({
             address: addr,
             convertTo: 'Hex',
         });
-        console.log(`hex = ${converted.address}`);
+        showConverted('hex', converted);
     };
-    const showBase64 = async (bounce, test, url) => {
+    const showBase64 = async (test, bounce, url) => {
         const converted = await client.contracts.convertAddress({
             address: addr,
             convertTo: 'Base64',
@@ -124,13 +127,13 @@ async function convertAddress(_dev: Dev, addr) {
             },
         });
         const flags = [
-            bounce ? 'bounce' : '',
             test ? 'test' : 'main',
+            bounce ? 'bounce' : '',
             url ? 'url' : '',
         ]
             .filter(x => x !== '')
-            .join(', ');
-        console.log(`${flags} = ${converted.address}`);
+            .join(' ');
+        showConverted(flags, converted);
     };
     await showHex();
     await showBase64(false, false, false);
