@@ -19,7 +19,8 @@
 		"flow": "flow",
 		"test": "jest",
 		"ton": "node ./dist/index.js",
-		"npm install": "npm install"
+		"npm install": "npm install",
+		"gendoc": "cd ./readme_generator/ && ./compile_README.sh"
 	},
 	"bin": {
 		"tondev": "./dist/index.js",
