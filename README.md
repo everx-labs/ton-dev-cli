@@ -196,6 +196,7 @@ Commands:
   add [network...]            Add network[s]
   remove|rm [network...]      Remove network[s]
   keys|k                      Generate random Key Pair
+  addr|a <addr>               Convert address
 ```
 
 ### _subcommands help:_
@@ -408,6 +409,17 @@ Options:
 Usage: tondev keys|k [options]
 
 Generate random Key Pair
+
+Options:
+  -h, --help  output usage information
+```
+
+#### `tondev addr --help`
+
+```
+Usage: tondev addr|a [options] <addr>
+
+Convert address
 
 Options:
   -h, --help  output usage information
