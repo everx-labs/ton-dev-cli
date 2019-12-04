@@ -21,6 +21,7 @@ import {Dev} from "../dev";
 import {Network} from "../networks/networks";
 import type {NetworkConfig} from "../networks/networks";
 import {web} from "../server/server";
+import { checkNetwork } from "./check";
 import {compilersWithNetworks} from "./options";
 import type {
     CleanOptions,
@@ -100,6 +101,17 @@ async function generateKeysCommand(_dev: Dev) {
     });
     const keys = await client.crypto.ed25519Keypair();
     console.log(keys);
+}
+
+async function testCommand(_dev: Dev, servers: string[], options: { verbose: boolean }) {
+    for (const server of servers) {
+        const client = await TONClient.create({
+            servers: [server],
+            log_verbose: options.verbose,
+        });
+        process.stdout.write(`${server} … `);
+        console.log(await checkNetwork(client));
+    }
 }
 
 async function convertAddress(_dev: Dev, addr) {
@@ -305,6 +317,11 @@ async function handleCommandLine(dev: Dev, args: string[]) {
     program
         .command('remove [network...]').alias('rm').description('Remove network[s]')
         .action(command(removeCommand));
+
+    program
+        .command('test [servers...]').alias('t').description('Test network[s]')
+        .option('-v, --verbose', 'show verbose test log', false)
+        .action(command(testCommand));
 
     program
         .command('keys').alias('k').description('Generate random Key Pair')
