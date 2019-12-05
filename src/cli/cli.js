@@ -14,15 +14,15 @@
  */
 // @flow
 
-import {TONClient} from "ton-client-node-js";
-import {ClientCode, ClientCodeLevel, JSModule} from "../compilers/client-code";
-import {Solidity} from "../compilers/solidity";
-import {Dev} from "../dev";
-import {Network} from "../networks/networks";
-import type {NetworkConfig} from "../networks/networks";
-import {web} from "../server/server";
-import { checkNetworks } from "./check";
-import {compilersWithNetworks} from "./options";
+import { TONClient } from "ton-client-node-js";
+import { ClientCode, ClientCodeLevel, JSModule } from "../compilers/client-code";
+import { Solidity } from "../compilers/solidity";
+import { Dev } from "../dev";
+import { Network } from "../networks/networks";
+import type { NetworkConfig } from "../networks/networks";
+import { web } from "../server/server";
+import { CheckNetwork } from "./check";
+import { compilersWithNetworks } from "./options";
 import type {
     CleanOptions,
     RecreateOptions,
@@ -33,8 +33,8 @@ import type {
     UseOptions, WebOptions,
 } from "./options";
 
-import {infoCommand} from "./info.js";
-import {spy} from "./spy";
+import { infoCommand } from "./info.js";
+import { spy } from "./spy";
 
 const USE_EXPERIMENTAL_FEATURES = false;
 
@@ -104,7 +104,7 @@ async function generateKeysCommand(_dev: Dev) {
 }
 
 async function testCommand(_dev: Dev, servers: string[], options: { verbose: boolean }) {
-    await checkNetworks(servers, options.verbose);
+    await CheckNetwork.checkNetworks(servers, options.verbose);
 }
 
 async function convertAddress(_dev: Dev, addr) {
@@ -202,7 +202,7 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .description('TON Labs development tools');
 
     program
-        .command('info', {isDefault: true}).description('Show summary about dev environment')
+        .command('info', { isDefault: true }).description('Show summary about dev environment')
         .option('-a, --available', 'show available versions')
         .action(command(infoCommand));
 
@@ -354,4 +354,4 @@ async function handleCommandLine(dev: Dev, args: string[]) {
     }
 }
 
-export {handleCommandLine};
+export { handleCommandLine };
