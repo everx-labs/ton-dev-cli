@@ -21,27 +21,35 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const cliProgress = require('cli-progress');
+const _colors = require('colors');
 
 export class CheckNetwork {
     static async checkNetworks(servers: string[], verbose: boolean): Promise<void> {
         await CheckNetwork.resolveGiverParameters();
         const checkers: CheckNetwork[] = servers.map(server => new CheckNetwork(server, verbose));
         let seconds: number = 0;
+        const serverMaxLength = servers.reduce((maxLength, server) => Math.max(maxLength, server.length), 0);
         const getStatus = (checker: CheckNetwork) => {
+            let decor = text => text;
+            if (checker.succeeded) {
+                decor = _colors.green;
+            } else if (checker.failed) {
+                decor = _colors.red;
+            }
             const status = {
                 status: '  ',
-                title: checker.server,
+                title: decor(checker.server.padEnd(serverMaxLength)),
                 time: '',
                 message: '',
             };
             if (checker.isFinished()) {
-                status.status = checker.succeeded ? '✓ ' : '✖ ';
-                status.time = ` … ${checker.time / 1_000}s`;
+                status.status = decor(checker.succeeded ? '✓ ' : '✖ ');
+                status.time = decor(` … ${checker.time / 1_000}s`);
             } else if (seconds > 0) {
-                status.time = ` … ${seconds}s`;
+                status.time = decor(` … ${seconds}s`);
             }
             if (!checker.succeeded) {
-                status.message = checker.message !== '' ? ` … ${checker.message}` : '';
+                status.message = checker.message !== '' ? decor(` … ${checker.message}`) : '';
             }
             return status;
         };
@@ -73,6 +81,7 @@ export class CheckNetwork {
                     if (!unfinished) {
                         clearInterval(timerId);
                         resolve();
+                        console.log();
                         process.exit(0);
                     }
                 }, 1_000)
@@ -119,6 +128,7 @@ export class CheckNetwork {
     }
 
     async checkGiver(): Promise<void> {
+        this.report({ message: 'looking for giver' });
         const givers = await this.client.queries.accounts.query(
             { id: { eq: CheckNetwork.giverAddress } },
             'balance code');
@@ -142,6 +152,7 @@ export class CheckNetwork {
     }
 
     async checkSendGrams(): Promise<void> {
+        this.report({ message: 'processing message' });
         await this.client.contracts.run({
             address: CheckNetwork.giverAddress,
             functionName: 'sendTransaction',
