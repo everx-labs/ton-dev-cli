@@ -28,6 +28,7 @@
 	},
 	"dependencies": {
 		"@babel/runtime": "^7.6.0",
+		"cli-progress": "^3.4.0",
 		"commander": "^4.0.1",
 		"cors": "^2.8.5",
 		"dockerode": "^2.5.8",

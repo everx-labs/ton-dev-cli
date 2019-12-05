@@ -21,7 +21,7 @@ import {Dev} from "../dev";
 import {Network} from "../networks/networks";
 import type {NetworkConfig} from "../networks/networks";
 import {web} from "../server/server";
-import { checkNetwork } from "./check";
+import { checkNetworks } from "./check";
 import {compilersWithNetworks} from "./options";
 import type {
     CleanOptions,
@@ -104,14 +104,7 @@ async function generateKeysCommand(_dev: Dev) {
 }
 
 async function testCommand(_dev: Dev, servers: string[], options: { verbose: boolean }) {
-    for (const server of servers) {
-        const client = await TONClient.create({
-            servers: [server],
-            log_verbose: options.verbose,
-        });
-        process.stdout.write(`${server} … `);
-        console.log(await checkNetwork(client));
-    }
+    await checkNetworks(servers, options.verbose);
 }
 
 async function convertAddress(_dev: Dev, addr) {
