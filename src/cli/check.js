@@ -30,7 +30,7 @@ export class CheckNetwork {
         let seconds: number = 0;
         const serverMaxLength = servers.reduce((maxLength, server) => Math.max(maxLength, server.length), 0);
         const getStatus = (checker: CheckNetwork) => {
-            let decor = text => text;
+            let decor = _colors.reset;
             if (checker.succeeded) {
                 decor = _colors.green;
             } else if (checker.failed) {
