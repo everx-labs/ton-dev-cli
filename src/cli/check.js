@@ -27,31 +27,29 @@ export class CheckNetwork {
     static async checkNetworks(servers: string[], verbose: boolean): Promise<void> {
         await CheckNetwork.resolveGiverParameters();
         const checkers: CheckNetwork[] = servers.map(server => new CheckNetwork(server, verbose));
-        let seconds: number = 0;
         const serverMaxLength = servers.reduce((maxLength, server) => Math.max(maxLength, server.length), 0);
         const multiBar = new cliProgress.MultiBar(
             {
                 format: '{status}{title}{time}{message}',
             }
         );
-        const bars = checkers.map(checker => multiBar.create(100, 0, checker.getStatus(seconds, serverMaxLength)));
+        const bars = checkers.map(checker => multiBar.create(100, 0, checker.getStatus(serverMaxLength)));
         const updateLog = () => {
             console.log(checkers
-                .map(x => x.getStatus(seconds, serverMaxLength))
+                .map(x => x.getStatus(serverMaxLength))
                 .map(status => `${status.title}${status.time}${status.status}`)
                 .join(' / ')
             );
         };
         const updateBar = () => {
             for (let i = 0; i < checkers.length; i += 1) {
-                bars[i].update(1, checkers[i].getStatus(seconds, serverMaxLength));
+                bars[i].update(1, checkers[i].getStatus(serverMaxLength));
             }
         };
         const updateProgress = bars[0] ? updateBar : updateLog;
         await Promise.all([
             new Promise((resolve) => {
                 const timerId = setInterval(() => {
-                    seconds += 1;
                     updateProgress();
                     const unfinished = checkers.find(x => !x.isFinished());
                     if (!unfinished) {
@@ -90,7 +88,11 @@ export class CheckNetwork {
         this.retries = 0;
     }
 
-    getStatus(seconds: number, serverMaxLength: number) {
+    getStatus(serverMaxLength: number) {
+        const seconds = (ms: number, round: boolean): number => {
+            return round ? Math.round(ms / 1_000) : (ms / 1_000);
+        };
+
         let decor = _colors.reset;
         if (this.succeeded) {
             decor = _colors.green;
@@ -106,9 +108,14 @@ export class CheckNetwork {
         const retries = this.retries > 0 ? ` (${this.retries + 1})` : '';
         if (this.isFinished()) {
             status.status = decor(this.succeeded ? '✓ ' : '✖ ');
-            status.time = decor(` … ${this.time / 1_000}s${retries}`);
-        } else if (seconds > 0) {
-            status.time = decor(` … ${seconds}s${retries}`);
+            status.time = decor(` … ${seconds(this.time, false)}s${retries}`);
+        } else {
+            const s = seconds(Date.now() - this.start, true);
+            if (s > 0) {
+                status.time = decor(` … ${s}s${retries}`);
+            } else if (retries !== '') {
+                status.time = decor(` …${retries}`);
+            }
         }
         if (!this.succeeded) {
             status.message = this.message !== '' ? decor(` … ${this.message}`) : '';
@@ -184,6 +191,7 @@ export class CheckNetwork {
                 return;
             }
             this.retries += 1;
+            this.start = Date.now();
         }
     }
 
