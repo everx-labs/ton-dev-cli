@@ -29,46 +29,22 @@ export class CheckNetwork {
         const checkers: CheckNetwork[] = servers.map(server => new CheckNetwork(server, verbose));
         let seconds: number = 0;
         const serverMaxLength = servers.reduce((maxLength, server) => Math.max(maxLength, server.length), 0);
-        const getStatus = (checker: CheckNetwork) => {
-            let decor = _colors.reset;
-            if (checker.succeeded) {
-                decor = _colors.green;
-            } else if (checker.failed) {
-                decor = _colors.red;
-            }
-            const status = {
-                status: '  ',
-                title: decor(checker.server.padEnd(serverMaxLength)),
-                time: '',
-                message: '',
-            };
-            if (checker.isFinished()) {
-                status.status = decor(checker.succeeded ? '✓ ' : '✖ ');
-                status.time = decor(` … ${checker.time / 1_000}s`);
-            } else if (seconds > 0) {
-                status.time = decor(` … ${seconds}s`);
-            }
-            if (!checker.succeeded) {
-                status.message = checker.message !== '' ? decor(` … ${checker.message}`) : '';
-            }
-            return status;
-        };
         const multiBar = new cliProgress.MultiBar(
             {
                 format: '{status}{title}{time}{message}',
             }
         );
-        const bars = checkers.map(checker => multiBar.create(100, 0, getStatus(checker)));
+        const bars = checkers.map(checker => multiBar.create(100, 0, checker.getStatus(seconds, serverMaxLength)));
         const updateLog = () => {
             console.log(checkers
-                .map(getStatus)
+                .map(x => x.getStatus(seconds, serverMaxLength))
                 .map(status => `${status.title}${status.time}${status.status}`)
                 .join(' / ')
             );
         };
         const updateBar = () => {
             for (let i = 0; i < checkers.length; i += 1) {
-                bars[i].update(1, getStatus(checkers[i]));
+                bars[i].update(1, checkers[i].getStatus(seconds, serverMaxLength));
             }
         };
         const updateProgress = bars[0] ? updateBar : updateLog;
@@ -100,6 +76,7 @@ export class CheckNetwork {
     failed: boolean;
     start: number;
     time: number;
+    retries: number;
 
     constructor(server: string, verbose: boolean) {
         this.server = server;
@@ -110,6 +87,33 @@ export class CheckNetwork {
         this.failed = false;
         this.start = Date.now();
         this.time = 0;
+        this.retries = 0;
+    }
+
+    getStatus(seconds: number, serverMaxLength: number) {
+        let decor = _colors.reset;
+        if (this.succeeded) {
+            decor = _colors.green;
+        } else if (this.failed) {
+            decor = _colors.red;
+        }
+        const status = {
+            status: '  ',
+            title: decor(this.server.padEnd(serverMaxLength)),
+            time: '',
+            message: '',
+        };
+        const retries = this.retries > 0 ? ` (${this.retries + 1})` : '';
+        if (this.isFinished()) {
+            status.status = decor(this.succeeded ? '✓ ' : '✖ ');
+            status.time = decor(` … ${this.time / 1_000}s${retries}`);
+        } else if (seconds > 0) {
+            status.time = decor(` … ${seconds}s${retries}`);
+        }
+        if (!this.succeeded) {
+            status.message = this.message !== '' ? decor(` … ${this.message}`) : '';
+        }
+        return status;
     }
 
     async check(onUpdate: () => void): Promise<void> {
@@ -147,23 +151,40 @@ export class CheckNetwork {
             return;
         }
         if (!givers[0].code) {
-            this.report({ error: `giver code missing` });
+            this.report({ message: `deploying giver, balance: ${giverBalance}` });
+            await this.client.contracts.deploy({
+                package: CheckNetwork.giverPackage,
+                keyPair: CheckNetwork.giverKeys,
+                constructorParams: {},
+            });
+            this.report({ succeeded: true });
         }
     }
 
     async checkSendGrams(): Promise<void> {
-        this.report({ message: 'processing message' });
-        await this.client.contracts.run({
-            address: CheckNetwork.giverAddress,
-            functionName: 'sendTransaction',
-            abi: CheckNetwork.giverPackage.abi,
-            input: {
-                dest: '0:adb63a228837e478c7edf5fe3f0b5d12183e1f22246b67712b99ec538d6c5357',
-                value: 1_000_000,
-                bounce: false
-            },
-            keyPair: CheckNetwork.giverKeys,
-        });
+        while (true) {
+            this.report({ message: 'sending 0.001G' });
+            const first = await Promise.race([
+                new Promise(function (resolve) {
+                    setTimeout(resolve, 30_000, { retry: true });
+                }),
+                this.client.contracts.run({
+                    address: CheckNetwork.giverAddress,
+                    functionName: 'sendTransaction',
+                    abi: CheckNetwork.giverPackage.abi,
+                    input: {
+                        dest: '0:adb63a228837e478c7edf5fe3f0b5d12183e1f22246b67712b99ec538d6c5357',
+                        value: 1_000_000,
+                        bounce: false
+                    },
+                    keyPair: CheckNetwork.giverKeys,
+                })
+            ]);
+            if (first && first.transaction) {
+                return;
+            }
+            this.retries += 1;
+        }
     }
 
     isFinished() {
