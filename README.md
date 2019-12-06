@@ -176,27 +176,28 @@ Usage: tondev [options] [command]
 TON Labs development tools
 
 Options:
-  -V, --version               output the version number
-  -a, --available             show available versions
-  -h, --help                  output usage information
+  -V, --version                  output the version number
+  -a, --available                show available versions
+  -h, --help                     output usage information
 
 Commands:
-  info [options]              Show summary about dev environment
-  sol [options] [files...]    Build solidity contract[s]
-  gen [options] [files...]    Generate client code for contract[s]
-  start [options]             Start dev containers
-  stop [options]              Stop dev containers
-  restart [options]           Restart dev containers
-  recreate [options]          Recreate dev containers
-  setup [options]             Setup dev environment
-  clean [options]             Remove docker containers and images related to 
-                              TON Dev
-  use [options] <version>     Use specified version for containers
-  set [options] [network...]  Set network[s] options
-  add [network...]            Add network[s]
-  remove|rm [network...]      Remove network[s]
-  keys|k                      Generate random Key Pair
-  addr|a <addr>               Convert address
+  info [options]                 Show summary about dev environment
+  sol [options] [files...]       Build solidity contract[s]
+  gen [options] [files...]       Generate client code for contract[s]
+  start [options]                Start dev containers
+  stop [options]                 Stop dev containers
+  restart [options]              Restart dev containers
+  recreate [options]             Recreate dev containers
+  setup [options]                Setup dev environment
+  clean [options]                Remove docker containers and images related 
+                                 to TON Dev
+  use [options] <version>        Use specified version for containers
+  set [options] [network...]     Set network[s] options
+  add [network...]               Add network[s]
+  remove|rm [network...]         Remove network[s]
+  test|t [options] [servers...]  Test network[s]
+  keys|k                         Generate random Key Pair
+  addr|a <addr>                  Convert address
 ```
 
 ### _subcommands help:_
@@ -401,6 +402,18 @@ Remove network[s]
 
 Options:
   -h, --help  output usage information
+```
+
+#### `tondev test --help`
+
+```
+Usage: tondev test|t [options] [servers...]
+
+Test network[s]
+
+Options:
+  -v, --verbose  show verbose test log (default: false)
+  -h, --help     output usage information
 ```
 
 #### `tondev keys --help`
