@@ -16,122 +16,37 @@
 // @flow
 import { TONClient as TONClientNodeJs } from "ton-client-node-js";
 import type { TONClient } from "ton-client-js/types";
+import { inputLine } from "../utils/utils";
 
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
-const cliProgress = require('cli-progress');
-const _colors = require('colors');
 
-export class CheckNetwork {
-    static async checkNetworks(servers: string[], verbose: boolean): Promise<void> {
-        await CheckNetwork.resolveGiverParameters();
-        const checkers: CheckNetwork[] = servers.map((server) => {
-            return new CheckNetwork(server, verbose);
-        });
-        const serverMaxLength = servers.reduce((maxLength, server) => Math.max(maxLength, server.length), 0);
-        const multiBar = new cliProgress.MultiBar(
-            {
-                format: '{status}{title}{time}{message}',
-            }
-        );
-        const bars = checkers.map(checker => multiBar.create(100, 0, checker.getStatus(serverMaxLength)));
-        const updateLog = () => {
-            console.log(checkers
-                .map(x => x.getStatus(serverMaxLength))
-                .map(status => `${status.title}${status.time}${status.status}`)
-                .join(' / ')
-            );
-        };
-        const updateBar = () => {
-            for (let i = 0; i < checkers.length; i += 1) {
-                bars[i].update(1, checkers[i].getStatus(serverMaxLength));
-            }
-        };
-        const updateProgress = bars[0] ? updateBar : updateLog;
-
-        await Promise.all([
-            new Promise((resolve) => {
-                const timerId = setInterval(() => {
-                    updateProgress();
-                    const unfinished = checkers.find(x => !x.isFinished());
-                    if (!unfinished) {
-                        clearInterval(timerId);
-                        resolve();
-                        console.log();
-                        process.exit(0);
-                    }
-
-                }, 1_000)
-            }),
-            ...checkers.map((checker: CheckNetwork) => checker.check(updateProgress))
-        ]);
+export class NetworkTracer {
+    static async traceNetwork(server: string): Promise<void> {
+        await NetworkTracer.resolveGiverParameters();
+        const tracer: NetworkTracer = new NetworkTracer(server);
+        await tracer.check();
     }
 
     server: string;
-    verbose: boolean;
     client: TONClient;
-    onUpdate: () => void;
 
     message: string;
     succeeded: boolean;
     failed: boolean;
-    start: number;
-    time: number;
-    retries: number;
 
-    constructor(server: string, verbose: boolean) {
+    constructor(server: string) {
         this.server = server;
-        this.verbose = verbose;
-
         this.message = '';
         this.succeeded = false;
         this.failed = false;
-        this.start = Date.now();
-        this.time = 0;
-        this.retries = 0;
     }
 
-    getStatus(serverMaxLength: number) {
-        const seconds = (ms: number, round: boolean): number => {
-            return round ? Math.round(ms / 1_000) : (ms / 1_000);
-        };
-
-        let decor = _colors.reset;
-        if (this.succeeded) {
-            decor = _colors.green;
-        } else if (this.failed) {
-            decor = _colors.red;
-        }
-        const status = {
-            status: '  ',
-            title: decor(this.server.padEnd(serverMaxLength)),
-            time: '',
-            message: '',
-        };
-        const retries = this.retries > 0 ? ` (${this.retries + 1})` : '';
-        if (this.isFinished()) {
-            status.status = decor(this.succeeded ? '✓ ' : '✖ ');
-            status.time = decor(` … ${seconds(this.time, false)}s${retries}`);
-        } else {
-            const s = seconds(Date.now() - this.start, true);
-            if (s > 0) {
-                status.time = decor(` … ${s}s${retries}`);
-            } else if (retries !== '') {
-                status.time = decor(` …${retries}`);
-            }
-        }
-        if (!this.succeeded) {
-            status.message = this.message !== '' ? decor(` … ${this.message}`) : '';
-        }
-        return status;
-    }
-
-    async check(onUpdate: () => void): Promise<void> {
-        this.onUpdate = onUpdate;
+    async check(): Promise<void> {
         this.client = await TONClientNodeJs.create({
             servers: [this.server],
-            log_verbose: this.verbose,
+            log_verbose: true,
         });
         try {
             await this.checkGiver();
@@ -145,7 +60,7 @@ export class CheckNetwork {
     async checkGiver(): Promise<void> {
         this.report({ message: 'looking for giver' });
         const givers = await this.client.queries.accounts.query(
-            { id: { eq: CheckNetwork.giverAddress } },
+            { id: { eq: NetworkTracer.giverAddress } },
             'balance code');
         if (givers.length < 1) {
             this.report({ error: 'no giver' });
@@ -164,8 +79,8 @@ export class CheckNetwork {
         if (!givers[0].code) {
             this.report({ message: `deploying giver, balance: ${giverBalance}` });
             await this.client.contracts.deploy({
-                package: CheckNetwork.giverPackage,
-                keyPair: CheckNetwork.giverKeys,
+                package: NetworkTracer.giverPackage,
+                keyPair: NetworkTracer.giverKeys,
                 constructorParams: {},
             });
             this.report({ succeeded: true });
@@ -173,35 +88,38 @@ export class CheckNetwork {
     }
 
     async checkSendGrams(): Promise<void> {
-        while (true) {
-            this.report({ message: 'sending 0.001G' });
-            const message = await this.client.contracts.createRunMessage({
-                address: CheckNetwork.giverAddress,
-                functionName: 'sendTransaction',
-                abi: CheckNetwork.giverPackage.abi,
-                input: {
-                    dest: '0:adb63a228837e478c7edf5fe3f0b5d12183e1f22246b67712b99ec538d6c5357',
-                    value: 1_000_000,
-                    bounce: false
-                },
-                keyPair: CheckNetwork.giverKeys,
-            });
-            const first = await Promise.race([
-                new Promise(function (resolve) {
-                    setTimeout(resolve, 30_000, { retry: true });
-                }),
-                this.client.contracts.processRunMessage(message)
-            ]);
-            if (first && first.transaction) {
-                return;
-            }
-            this.retries += 1;
-            this.start = Date.now();
-        }
+        this.report({ message: 'sending 0.001G' });
+        const message = await this.client.contracts.createRunMessage({
+            address: NetworkTracer.giverAddress,
+            functionName: 'sendTransaction',
+            abi: NetworkTracer.giverPackage.abi,
+            input: {
+                dest: '0:adb63a228837e478c7edf5fe3f0b5d12183e1f22246b67712b99ec538d6c5357',
+                value: 1_000_000,
+                bounce: false
+            },
+            keyPair: NetworkTracer.giverKeys,
+        });
+        console.log(`Message ID: ${message.message.messageId}`);
+        console.log(`Press [Return] to send...`);
+        await inputLine();
+        await this.client.contracts.processRunMessage(message);
     }
 
     isFinished() {
         return this.succeeded || this.failed;
+    }
+
+    getStatus() {
+        let status = '  ';
+        let message = '';
+        if (this.isFinished()) {
+            status = this.succeeded ? '✓ ' : '✖ ';
+        }
+        if (!this.succeeded) {
+            message = this.message !== '' ? ` … ${this.message}` : '';
+        }
+        return `${status}${message}`;
     }
 
     report(options: {
@@ -213,18 +131,16 @@ export class CheckNetwork {
             this.succeeded = options.succeeded;
             this.failed = false;
             this.message = '';
-            this.time = Date.now() - this.start;
         } else if (options.error !== undefined) {
             this.message = (options.error && options.error.message)
                 ? options.error.message
                 : (options.error || '').toString();
             this.failed = true;
             this.succeeded = false;
-            this.time = Date.now() - this.start;
         } else if (options.message !== undefined && !this.isFinished()) {
             this.message = options.message;
         }
-        this.onUpdate();
+        console.log(this.getStatus());
     }
 
     static giverAddress = '0:5b168970a9c63dd5c42a6afbcf706ef652476bb8960a22e1d8a2ad148e60c0ea';
@@ -263,13 +179,13 @@ export class CheckNetwork {
         const client = await TONClientNodeJs.create({ servers: ['net.ton.dev'] });
         try {
             let keysPath = path.resolve(os.homedir(), 'giverKeys.json');
-            CheckNetwork.giverKeys = JSON.parse(fs.readFileSync(keysPath, 'utf8'));
+            NetworkTracer.giverKeys = JSON.parse(fs.readFileSync(keysPath, 'utf8'));
         } catch (error) {
         }
-        CheckNetwork.giverAddress = (await client.contracts.createDeployMessage({
-            package: CheckNetwork.giverPackage,
+        NetworkTracer.giverAddress = (await client.contracts.createDeployMessage({
+            package: NetworkTracer.giverPackage,
             constructorParams: {},
-            keyPair: CheckNetwork.giverKeys,
+            keyPair: NetworkTracer.giverKeys,
         })).address;
     }
 

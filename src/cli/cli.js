@@ -35,6 +35,7 @@ import type {
 
 import { infoCommand } from "./info.js";
 import { spy } from "./spy";
+import { NetworkTracer } from "./trace";
 
 const USE_EXPERIMENTAL_FEATURES = false;
 
@@ -151,6 +152,10 @@ async function convertAddress(_dev: Dev, addr) {
     await showBase64(true, true, true);
 }
 
+async function traceCommand(_dev: Dev, server: string) {
+    await NetworkTracer.traceNetwork(server);
+}
+
 async function useCommand(dev: Dev, version: string, options: UseOptions) {
     await dev.useVersion(version, compilersWithNetworks(dev, options));
 }
@@ -239,6 +244,7 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .option(
             '-l, --client-languages <languages>',
             'generate client code for languages: "js", "rs" (multiple languages must be separated with comma)',
+            'js'
         )
         .option(
             '-L, --client-level <client-level>',
@@ -339,6 +345,11 @@ async function handleCommandLine(dev: Dev, args: string[]) {
             .command('web').description('Run web console')
             .option('-p, --port <port>', 'host port to bound web console (default: 8800)', '8800')
             .action(command(webConsoleCommand));
+
+        program
+            .command('trace <server>').description('Trace message')
+            .action(command(traceCommand));
+
     }
 
     // .command('update', `update ${dev.name} docker images`).action(action)
