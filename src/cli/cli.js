@@ -100,7 +100,7 @@ async function generateKeysCommand(_dev: Dev) {
         servers: ['http://localhost'],
     });
     const keys = await client.crypto.ed25519Keypair();
-    console.log(keys);
+    console.log(JSON.stringify(keys, undefined, 4));
 }
 
 async function testCommand(_dev: Dev, servers: string[], options: { verbose: boolean }) {
@@ -156,6 +156,9 @@ async function useCommand(dev: Dev, version: string, options: UseOptions) {
 }
 
 async function solCommand(dev: Dev, files: string[], options: SolOptions) {
+    if (files.length < 1) {
+        throw new Error('You must specify at least one file name');
+    }
     await Solidity.build(dev, files, {
         clientLanguages: (options.clientLanguages || '').split(','),
         clientLevel: options.clientLevel || ClientCodeLevel.run,
@@ -164,6 +167,9 @@ async function solCommand(dev: Dev, files: string[], options: SolOptions) {
 }
 
 async function genCommand(dev: Dev, files: string[], options: SolOptions) {
+    if (files.length < 1) {
+        throw new Error('You must specify at least one file name');
+    }
     await ClientCode.generate(files, {
         clientLanguages: (options.clientLanguages || '').split(','),
         clientLevel: options.clientLevel || ClientCodeLevel.run,
