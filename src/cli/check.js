@@ -16,6 +16,7 @@
 // @flow
 import { TONClient as TONClientNodeJs } from "ton-client-node-js";
 import type { TONClient } from "ton-client-js/types";
+import { inputLine } from "../utils/utils";
 
 const os = require('os');
 const fs = require('fs');
@@ -50,21 +51,24 @@ export class CheckNetwork {
         };
         const updateProgress = bars[0] ? updateBar : updateLog;
 
-        await Promise.all([
-            new Promise((resolve) => {
-                const timerId = setInterval(() => {
-                    updateProgress();
-                    const unfinished = checkers.find(x => !x.isFinished());
-                    if (!unfinished) {
-                        clearInterval(timerId);
-                        resolve();
-                        console.log();
-                        process.exit(0);
-                    }
+        await Promise.race([
+            inputLine(),
+            Promise.all([
+                new Promise((resolve) => {
+                    const timerId = setInterval(() => {
+                        updateProgress();
+                        const unfinished = checkers.find(x => !x.isFinished());
+                        if (!unfinished) {
+                            clearInterval(timerId);
+                            resolve();
+                            console.log();
+                            process.exit(0);
+                        }
 
-                }, 1_000)
-            }),
-            ...checkers.map((checker: CheckNetwork) => checker.check(updateProgress))
+                    }, 1_000)
+                }),
+                ...checkers.map((checker: CheckNetwork) => checker.check(updateProgress))
+            ]),
         ]);
     }
 

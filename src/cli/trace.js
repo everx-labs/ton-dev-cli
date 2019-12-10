@@ -103,7 +103,10 @@ export class NetworkTracer {
         console.log(`Message ID: ${message.message.messageId}`);
         console.log(`Press [Return] to send...`);
         await inputLine();
-        await this.client.contracts.processRunMessage(message);
+        const result = await this.client.contracts.processRunMessage(message);
+        if (result && result.transaction) {
+            console.log('>>>', result.transaction);
+        }
     }
 
     isFinished() {
