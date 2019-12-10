@@ -13,6 +13,8 @@
  *
  */
 
+// @flow
+
 import { parseFileArg } from "../utils/utils";
 import Handlebars from 'handlebars';
 import { parseSolidityFileArg } from "./solidity";
@@ -51,12 +53,7 @@ export const ClientCodeLevel = {
 
 export type ClientCodeLevelType = $Keys<typeof ClientCodeLevel>;
 
-export const ClientCodeLanguage = {
-    js: 'js',
-    rs: 'rs',
-};
-
-export type ClientCodeLanguageType = $Keys<typeof ClientCodeLanguage>;
+export type ClientCodeLanguageType = string;
 
 export const JSModule = {
     node: 'node',
@@ -73,30 +70,53 @@ export type ClientCodeOptions = {
     jsModule: JSModuleType,
 };
 
+export interface ClientCodeLanguage {
+    name: string,
+    shortName: string,
+    generate: (files: string[], options: ClientCodeOptions) => Promise<void>
+}
 
 export class ClientCode {
-    static async generate(files: string[], options: ClientCodeOptions) {
-        const generateLanguage = async (
-            language: ClientCodeLanguageType,
-            generator: (options: ClientCodeOptions) => Promise<void>
-        ) => {
-            if (options.clientLanguages.find(x => x.toLowerCase() === language.toLowerCase())) {
-                await generator.bind(ClientCode)(files, options);
-            }
-        };
+    static languages: { [string]: ClientCodeLanguage } = {};
 
-        await generateLanguage(ClientCodeLanguage.js, this.generateJavaScript);
-        await generateLanguage(ClientCodeLanguage.rs, this.generateRust);
+    static register(language: ClientCodeLanguage) {
+        ClientCode.languages[language.shortName.toLowerCase()] = language;
     }
 
-    static getTemplateContext(fileArg: string, options: ClientCodeOptions): any {
-        const file = parseSolidityFileArg(fileArg);
+    static async generate(files: string[], options: ClientCodeOptions) {
+        for (const name of options.clientLanguages) {
+            const language = ClientCode.languages[name.toLocaleLowerCase()];
+            if (!language) {
+                throw Error(`Unknown client code language: ${name}`);
+            }
+            await language.generate(files, options);
+        }
+    }
+}
+
+const JsClientCode = {
+    name: 'JavaScript',
+    shortName: 'js',
+    getTemplateContext(fileArg: string, options: ClientCodeOptions): any {
+        const file = parseSolidityFileArg(fileArg, false);
         const { dir, name } = file;
+        const readText = (name: string, encoding: 'utf8' | 'base64'): string => {
+            if (!fs.existsSync(dir(name))) {
+                throw new Error(`File not exists: ${name}`);
+            }
+            return fs.readFileSync(dir(name)).toString(encoding);
+        };
+
         const imageBase64 = options.clientLevel === ClientCodeLevel.deploy
-            ? fs.readFileSync(dir(name.tvc)).toString('base64')
+            ? readText(name.tvc, 'base64')
             : '';
-        const abiJson = fs.readFileSync(dir(name.abi)).toString().trimRight();
-        const abi = JSON.parse(abiJson);
+        const abiJson = readText(name.abi, 'utf8').trimRight();
+        const abi = {
+            functions: [],
+            data: [],
+            ...JSON.parse(abiJson)
+        };
+
         const className = `${name.base[0].toUpperCase()}${name.base.substr(1)}Contract`;
         const isDeploy = (options.clientLevel || 'deploy') === 'deploy';
 
@@ -123,6 +143,8 @@ export class ClientCode {
         const funContext = (f) => {
             return {
                 ...f,
+                hasData: false,
+                hasInputsAndData: false,
                 hasInputs: f.inputs.length > 0,
                 hasOutputs: f.outputs.length > 0,
                 inputs: f.inputs.map(varContext),
@@ -130,13 +152,17 @@ export class ClientCode {
             }
         };
 
-        const constructor = funContext(abi.functions.find(x => x.name === 'constructor'));
+        const constructor = funContext(abi.functions.find(x => x.name === 'constructor') || {
+            name: 'constructor',
+            inputs: [],
+            outputs: [],
+            data: [],
+        });
         constructor.hasData = abi.data.length > 0;
         constructor.hasInputsAndData = constructor.hasInputs && constructor.hasData;
         constructor.data = abi.data.map(varContext);
 
         const functions = abi.functions.filter(x => x.name !== 'constructor').map(funContext);
-
         return {
             imageBase64,
             abiJson,
@@ -150,22 +176,14 @@ export class ClientCode {
             jsModuleEs: options.jsModule === JSModule.es || options.jsModule === JSModule.esNoDefault,
             jsModuleEsDefault: options.jsModule === JSModule.es,
         };
-    }
-
-    static async generateJavaScript(files: string[], options: ClientCodeOptions) {
-        for (let i = 0; i < files.length; i += 1) {
-            await ClientCode.generateJavaScriptFile(files[i], options);
+    },
+    async generate(files: string[], options: ClientCodeOptions) {
+        for (const file of files) {
+            const { dir, base } = parseFileArg(file, '.sol', false);
+            const js = await applyTemplate(jsContractTemplate, JsClientCode.getTemplateContext(file, options));
+            fs.writeFileSync(dir(`${base}Contract.js`), js, { encoding: 'utf8' });
         }
     }
+};
 
-    static async generateJavaScriptFile(file: string, options: ClientCodeOptions) {
-        const { dir, base } = parseFileArg(file, '.sol');
-        const js = await applyTemplate(jsContractTemplate, ClientCode.getTemplateContext(file, options));
-        fs.writeFileSync(dir(`${base}Contract.js`), js, { encoding: 'utf8' });
-    }
-
-
-    static async generateRust(files: string[], options: ClientCodeOptions) {
-
-    }
-}
+ClientCode.register(JsClientCode);

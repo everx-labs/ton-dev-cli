@@ -21,6 +21,7 @@ import { Dev } from "../dev";
 import { Network } from "../networks/networks";
 import type { NetworkConfig } from "../networks/networks";
 import { web } from "../server/server";
+import { CheckNetwork } from "./check";
 import { compilersWithNetworks } from "./options";
 import type {
     CleanOptions,
@@ -29,11 +30,12 @@ import type {
     SetupOptions, SolOptions,
     StartOptions,
     StopOptions,
-    UseOptions, WebOptions
+    UseOptions, WebOptions,
 } from "./options";
 
 import { infoCommand } from "./info.js";
 import { spy } from "./spy";
+import { NetworkTracer } from "./trace";
 
 const USE_EXPERIMENTAL_FEATURES = false;
 
@@ -96,10 +98,62 @@ async function removeCommand(dev: Dev, names: string[]) {
 
 async function generateKeysCommand(_dev: Dev) {
     const client = await TONClient.create({
-        servers: ['http://localhost']
+        servers: ['http://localhost'],
     });
     const keys = await client.crypto.ed25519Keypair();
-    console.log(keys);
+    console.log(JSON.stringify(keys, undefined, 4));
+}
+
+async function testCommand(_dev: Dev, servers: string[], options: { verbose: boolean }) {
+    await CheckNetwork.checkNetworks(servers, options.verbose);
+}
+
+async function convertAddress(_dev: Dev, addr) {
+    const client = await TONClient.create({
+        servers: ['http://localhost'],
+    });
+    const showConverted = (title, converted) => {
+        console.log(`${converted.address === addr ? '✓' : ' '} ${title} = ${converted.address}`);
+    };
+    const showHex = async () => {
+        const converted = await client.contracts.convertAddress({
+            address: addr,
+            convertTo: 'Hex',
+        });
+        showConverted('hex', converted);
+    };
+    const showBase64 = async (test, bounce, url) => {
+        const converted = await client.contracts.convertAddress({
+            address: addr,
+            convertTo: 'Base64',
+            base64Params: {
+                bounce,
+                test,
+                url,
+            },
+        });
+        const flags = [
+            test ? 'test' : 'main',
+            bounce ? 'bounce' : '',
+            url ? 'url' : '',
+        ]
+            .filter(x => x !== '')
+            .join(' ');
+        showConverted(flags, converted);
+    };
+    await showHex();
+    await showBase64(false, false, false);
+    await showBase64(false, false, true);
+    await showBase64(false, true, false);
+    await showBase64(false, true, true);
+    await showBase64(true, false, false);
+    await showBase64(true, false, true);
+    await showBase64(true, true, false);
+    await showBase64(true, true, true);
+}
+
+async function traceCommand(_dev: Dev, server: string) {
+    await NetworkTracer.traceNetwork(server);
 }
 
 async function useCommand(dev: Dev, version: string, options: UseOptions) {
@@ -107,6 +161,9 @@ async function useCommand(dev: Dev, version: string, options: UseOptions) {
 }
 
 async function solCommand(dev: Dev, files: string[], options: SolOptions) {
+    if (files.length < 1) {
+        throw new Error('You must specify at least one file name');
+    }
     await Solidity.build(dev, files, {
         clientLanguages: (options.clientLanguages || '').split(','),
         clientLevel: options.clientLevel || ClientCodeLevel.run,
@@ -115,6 +172,9 @@ async function solCommand(dev: Dev, files: string[], options: SolOptions) {
 }
 
 async function genCommand(dev: Dev, files: string[], options: SolOptions) {
+    if (files.length < 1) {
+        throw new Error('You must specify at least one file name');
+    }
     await ClientCode.generate(files, {
         clientLanguages: (options.clientLanguages || '').split(','),
         clientLevel: options.clientLevel || ClientCodeLevel.run,
@@ -130,10 +190,44 @@ async function webConsoleCommand(dev: Dev, options: WebOptions) {
     await web(dev, options);
 }
 
-const sharedOptions = {
-    n: ['-n, --networks [names]', 'apply command to specified network[s] (names must be separated with comma)'],
-    m: ['-m, --compilers', 'apply command to the compilers container'],
-};
+const networksOption = [
+    '-n, --networks [names]',
+    'Apply command to specified network[s] (names must be separated with comma).'
+];
+
+const compilersOption = [
+    '-m, --compilers',
+    'Apply command to the compilers container.'
+];
+
+function getSupportedLanguages(): string[] {
+    return Object.values(ClientCode.languages).map((x: any) => x.shortName);
+}
+
+const clientLanguagesOption = [
+    '-l, --client-languages <languages>',
+    `Generate client code for specified languages separated by comma, ` +
+    `supported languages: "${getSupportedLanguages().join('", "')}".`,
+];
+
+const clientLevelOption = [
+    '-L, --client-level <client-level>',
+    'Client code level: ' +
+    '"run" to run only, ' +
+    '"deploy" to run and deploy (includes an imageBase64 of binary contract)',
+    'deploy.'
+];
+
+const jsModuleTypeOption = [
+    '--js-module <module-type>',
+    "Java Script module type: " +
+    "`node` to use with `const FooContract = require('foo')`, " +
+    "`nodeNoDefault` to use with `const {FooContract} = require('foo')`, " +
+    "`es` to use with `import FooContract from 'foo'`, " +
+    "`esNoDefault` to use with `import {FooContract} from 'foo'`.",
+    'node'
+];
+
 
 async function handleCommandLine(dev: Dev, args: string[]) {
     let commandAction = infoCommand;
@@ -149,132 +243,117 @@ async function handleCommandLine(dev: Dev, args: string[]) {
     program
         .name(dev.name)
         .version(dev.version)
-        .option('-a, --available', 'show available versions')
+        .option('-a, --available', 'Show available versions.')
         .description('TON Labs development tools');
 
     program
-        .command('info', { isDefault: true }).description('Show summary about dev environment')
-        .option('-a, --available', 'show available versions')
+        .command('info', { isDefault: true }).description('Show summary about dev environment.')
+        .option('-a, --available', 'Show available versions.')
         .action(command(infoCommand));
 
     program
-        .command('sol [files...]').description('Build solidity contract[s]')
-        .option(
-            '-l, --client-languages <languages>',
-            'generate client code for languages: "js", "rs" (multiple languages must be separated with comma)'
-        )
-        .option(
-            '-L, --client-level <client-level>',
-            'client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of binary contract)',
-            'deploy'
-        )
-        .option(
-            '--js-module <module-type>',
-            "Java Script module type: " +
-            "`node` to use with `const FooContract = require('foo`)`, " +
-            "`nodeNoDefault` to use with `const {FooContract} = require('foo`)`, " +
-            "`es` to use with `import FooContract from 'foo'`, " +
-            "`esNoDefault` to use with `import {FooContract} from 'foo'` (`node` is a default option)",
-            'node'
-        )
+        .command('sol [files...]').description('Build solidity contract[s].')
+        .option(...clientLanguagesOption)
+        .option(...clientLevelOption)
+        .option(...jsModuleTypeOption)
         .action(command(solCommand));
 
     program
-        .command('gen [files...]').description('Generate client code for contract[s]')
-        .option(
-            '-l, --client-languages <languages>',
-            'generate client code for languages: "js", "rs" (multiple languages must be separated with comma)'
-        )
-        .option(
-            '-L, --client-level <client-level>',
-            'client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of binary contract)',
-            'deploy'
-        )
-        .option(
-            '--js-module <module-type>',
-            "Java Script module type: " +
-            "`node` to use with `const FooContract = require('foo`)`, " +
-            "`nodeNoDefault` to use with `const {FooContract} = require('foo`)`, " +
-            "`es` to use with `import FooContract from 'foo'`, " +
-            "`esNoDefault` to use with `import {FooContract} from 'foo'` (`node` is a default option)",
-            'node'
-        )
+        .command('gen [files...]').description('Generate client code for contract[s].')
+        .option(clientLanguagesOption[0], clientLanguagesOption[1], 'js')
+        .option(...clientLevelOption)
+        .option(...jsModuleTypeOption)
         .action(command(genCommand));
 
     program
-        .command('start').description('Start dev containers')
-        .option(...sharedOptions.n)
-        .option(...sharedOptions.m)
+        .command('start').description('Start dev containers.')
+        .option(...networksOption)
+        .option(...compilersOption)
         .action(command(startCommand));
 
     program
-        .command('stop').description('Stop dev containers')
-        .option(...sharedOptions.n)
-        .option(...sharedOptions.m)
+        .command('stop').description('Stop dev containers.')
+        .option(...networksOption)
+        .option(...compilersOption)
         .action(command(stopCommand));
 
     program
-        .command('restart').description('Restart dev containers')
-        .option(...sharedOptions.n)
-        .option(...sharedOptions.m)
+        .command('restart').description('Restart dev containers.')
+        .option(...networksOption)
+        .option(...compilersOption)
         .action(command(restartCommand));
 
     program
-        .command('recreate').description('Recreate dev containers')
-        .option(...sharedOptions.n)
-        .option(...sharedOptions.m)
+        .command('recreate').description('Recreate dev containers.')
+        .option(...networksOption)
+        .option(...compilersOption)
         .action(command(recreateCommand));
 
     program
-        .command('setup').description('Setup dev environment')
-        .option(...sharedOptions.n)
-        .option(...sharedOptions.m)
+        .command('setup').description('Setup dev environment.')
+        .option(...networksOption)
+        .option(...compilersOption)
         .action(command(setupCommand));
 
     program
-        .command('clean').description('Remove docker containers and images related to TON Dev')
-        .option('-n, --networks', 'clean local node docker containers and images')
-        .option('-m, --compilers', 'clean compilers docker containers and images')
-        .option('-c, --containers', 'clean containers only', false)
+        .command('clean').description('Remove docker containers and images related to TON Dev.')
+        .option('-n, --networks', 'Clean local node docker containers and images.')
+        .option('-m, --compilers', 'Clean compilers docker containers and images.')
+        .option('-c, --containers', 'Clean containers only.', false)
         .action(command(cleanCommand));
 
     program
-        .command('use <version>').description('Use specified version for containers')
-        .option(...sharedOptions.n)
-        .option(...sharedOptions.m)
+        .command('use <version>').description('Use specified version for containers.')
+        .option(...networksOption)
+        .option(...compilersOption)
         .action(command(useCommand));
 
     program
-        .command('set [network...]').description('Set network[s] options')
-        .option('-p, --port <port>', 'host port to bound local node')
-        .option('-d, --db-port <binding>', 'host port to bound local nodes Arango DB ("bind" to use default Arango DB port, "unbind" to unbind Arango DB port)')
-        .option('-n, --new-name <name>', 'set new name for network')
+        .command('set [network...]').description('Set network[s] options.')
+        .option('-p, --port <port>', 'Host port to bound local node.')
+        .option(
+            '-d, --db-port <binding>',
+            'Host port to bound local nodes Arango DB ("bind" to use default Arango DB port, "unbind" to unbind Arango DB port).',
+        )
+        .option('-n, --new-name <name>', 'Set new name for network.')
         .action(command(setCommand));
 
     program
-        .command('add [network...]').description('Add network[s]')
+        .command('add [network...]').description('Add network[s].')
         .action(command(addCommand));
 
     program
-        .command('remove [network...]').alias('rm').description('Remove network[s]')
+        .command('remove [network...]').alias('rm').description('Remove network[s].')
         .action(command(removeCommand));
 
     program
-        .command('keys').alias('k').description('Generate random Key Pair')
+        .command('test [servers...]').alias('t').description('Test network[s].')
+        .option('-v, --verbose', 'Show verbose test log.', false)
+        .action(command(testCommand));
+
+    program
+        .command('keys').alias('k').description('Generate random Key Pair.')
         .action(command(generateKeysCommand));
+
+    program
+        .command('addr <addr>').alias('a').description('Convert address.')
+        .action(command(convertAddress));
 
     if (USE_EXPERIMENTAL_FEATURES) {
         program
-            .command('spy [networks...]').description('Run network scanner')
+            .command('spy [networks...]').description('Run network scanner.')
             .action(command(spyCommand));
 
         program
-            .command('web').description('Run web console')
-            .option('-p, --port <port>', 'host port to bound web console (default: 8800)', '8800')
+            .command('web').description('Run web console.')
+            .option('-p, --port <port>', 'Host port to bound web console.', '8800')
             .action(command(webConsoleCommand));
-    }
 
-    // .command('update', `update ${dev.name} docker images`).action(action)
+        program
+            .command('trace <server>').description('Trace message.')
+            .action(command(traceCommand));
+
+    }
 
     program.parse(args);
 

@@ -20,12 +20,12 @@ const path = require('path');
 jest.setTimeout(60_000);
 
 test('Solidity Compiler', async () => {
-    const dev = new Dev();
-    await Solidity.build(dev, [
-        path.resolve(__dirname, 'test')
-    ], {
-        clientLevel: 'deploy',
-        clientLanguages: ['js'],
-    })
+    // const dev = new Dev();
+    // await Solidity.build(dev, [
+    //     path.resolve(__dirname, 'test')
+    // ], {
+    //     clientLevel: 'deploy',
+    //     clientLanguages: ['js'],
+    // })
 });
 

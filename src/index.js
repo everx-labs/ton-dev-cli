@@ -30,7 +30,11 @@ async function main() {
         await main();
         process.exit(0);
     } catch (error) {
-        console.error(`\n${error}`);
+        if (error.message) {
+            console.error(`\n${error.message}`);
+        } else {
+            console.error(`\n${error}`);
+        }
         process.exit(1);
     }
 })();
