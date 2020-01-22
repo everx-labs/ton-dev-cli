@@ -54,7 +54,7 @@ Commands:
   clean         Remove all TON Dev docker containers and images
   use <version> Select version for compilers and nets 
         
-Copyright 2018-2019 TON DEV SOLUTIONS LTD.
+Copyright 2018-2020 TON DEV SOLUTIONS LTD.
 Licensed under the SOFTWARE EVALUATION License (https://www.ton.dev/licenses)
 `,
     tonDevImages() {
