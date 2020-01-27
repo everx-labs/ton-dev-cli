@@ -215,7 +215,7 @@ const clientLevelOption = [
     'Client code level: ' +
     '"run" to run only, ' +
     '"deploy" to run and deploy (includes an imageBase64 of binary contract)',
-    'deploy.'
+    'deploy'
 ];
 
 const jsModuleTypeOption = [
