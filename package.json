@@ -1,6 +1,6 @@
 {
 	"name": "ton-dev-cli",
-	"version": "0.17.1",
+	"version": "0.17.2",
 	"keywords": [
 		"TON",
 		"Javascript",
@@ -34,8 +34,8 @@
 		"dockerode": "^3.0.2",
 		"express": "^4.17.1",
 		"handlebars": "^4.5.3",
-		"ton-client-js": "^0.17.0",
-		"ton-client-node-js": "^0.17.0",
+		"ton-client-js": "^0.19.0",
+		"ton-client-node-js": "^0.19.0",
 		"colors": "^1.4.0"
 	},
 	"devDependencies": {
