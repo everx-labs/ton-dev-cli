@@ -65,7 +65,11 @@ async function recreateCommand(dev: Dev, options: RecreateOptions) {
 
 async function cleanCommand(dev: Dev, options: CleanOptions) {
     const all = !options.compilers && !options.networks;
-    await dev.clean(options.compilers || all, options.networks || all, options.containers);
+    await dev.clean(
+        options.compilers || all,
+        options.networks || all,
+        options.containers,
+    );
 }
 
 async function setCommand(dev: Dev, names: string[], options: SetNetworkOptions) {
@@ -165,7 +169,7 @@ async function solCommand(dev: Dev, files: string[], options: SolOptions) {
         throw new Error('You must specify at least one file name');
     }
     await Solidity.build(dev, files, {
-        clientLanguages: (options.clientLanguages || '').split(','),
+        clientLanguages: (options.clientLanguages || '').split(',').filter(x => x),
         clientLevel: options.clientLevel || ClientCodeLevel.run,
         jsModule: options.jsModule || JSModule.node,
     });
