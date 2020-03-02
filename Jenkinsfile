@@ -30,7 +30,6 @@ pipeline {
                                 credentialsId: 'npmJS_token',
                                 variable: 'NPM_TOKEN')]) {
                         sh """
-                            npm whoami
                             cd $ton_directory
                             echo //registry.npmjs.org/:_authToken=${env.NPM_TOKEN} > .npmrc
                             npm install
