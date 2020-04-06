@@ -86,7 +86,7 @@ export class Solidity {
         const { name } = file;
         batch.push(
             `solc ${name.sol} --tvm > ${name.code}`,
-            `solc ${name.sol} --tvm_abi > ${name.abi}`,
+            `solc ${name.sol} --tvm_abi > ${name.abi} || solc ${name.sol} --tvm-abi > ${name.abi}`,
             `tvm_linker compile ${name.code} --lib /usr/bin/stdlib_sol.tvm --abi-json ${name.abi} > ${name.result}`
         );
     }
