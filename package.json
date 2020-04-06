@@ -40,7 +40,6 @@
 		"dockerode": "^3.0.2",
 		"express": "^4.17.1",
 		"handlebars": "^4.5.3",
-		"husky": "^4.2.3",
 		"ton-client-js": "^0.21.0",
 		"ton-client-node-js": "^0.21.0"
 	},
@@ -64,6 +63,6 @@
 		"eslint-plugin-jsx-a11y": "^6.2.3",
 		"flow": "^0.2.3",
 		"jest": "^24.9.0",
-		"pre-commit": "^1.2.2"
+		"husky": "^4.2.3"
 	}
 }
