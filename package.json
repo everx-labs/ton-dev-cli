@@ -1,6 +1,6 @@
 {
 	"name": "ton-dev-cli",
-	"version": "0.17.4",
+	"version": "0.17.5",
 	"keywords": [
 		"TON",
 		"Javascript",
@@ -28,7 +28,7 @@
 	},
 	"husky": {
 		"hooks": {
-			"pre-push": "npm run babel"
+			"pre-commit": "npm run babel && git add dist"
 		}
 	},
 	"dependencies": {
