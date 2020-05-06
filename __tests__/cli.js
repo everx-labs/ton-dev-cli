@@ -13,8 +13,8 @@
  *
  */
 
-import { handleCommandLine } from "../src/cli/cli";
-import { Dev } from "../src/dev";
+import {handleCommandLine} from "../src/cli/cli";
+import {Dev} from "../src/dev";
 
 jest.setTimeout(60_000);
 
@@ -31,7 +31,7 @@ async function cmd(...args) {
     return out;
 }
 
-test('Masterchain addr', async () => {
+test.skip('Masterchain addr', async () => {
     // await cmd('a', '-1:0b0cb5e0bc0bc0baa3ea45a37d14dee1b1a24befa40c7be54aeaf8fcc7438b5c');
 
     const hexToAddresses = await cmd('a', '-1:5555555555555555555555555555555555555555555555555555555555555555');
@@ -42,3 +42,68 @@ test('Masterchain addr', async () => {
     });
 });
 
+
+async function expectError(code: number, source: string, message?: string, f) {
+    try {
+        await f();
+        fail(`Expected error with code:${code} source: ${source}`);
+    } catch (error) {
+        expect({ code: error.code, source: error.source }).toEqual({ code, source });
+        if (message)
+            expect(error.message).toMatch(message);
+    }
+}
+
+
+test('Should convert diff address format', async () => {
+    const hexToAddresses = await cmd('a', '-1:5555555555555555555555555555555555555555555555555555555555555555');
+    expect(hexToAddresses).toMatch("✓ hex = -1:5555555555555555555555555555555555555555555555555555555555555555");
+    expect(hexToAddresses).toMatch("main = Uf9VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVeGi");
+    expect(hexToAddresses).toMatch("main url = Uf9VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVeGi");
+    expect(hexToAddresses).toMatch("main bounce = Ef9VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVbxn");
+    expect(hexToAddresses).toMatch("main bounce url = Ef9VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVbxn")
+    expect(hexToAddresses).toMatch("test = 0f9VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVoo");
+    expect(hexToAddresses).toMatch("test url = 0f9VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVoo");
+    expect(hexToAddresses).toMatch("test bounce = kf9VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQft");
+    expect(hexToAddresses).toMatch("test bounce url = kf9VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQft");
+
+
+    const bounceToHex = await cmd('a', 'Uf9VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVeGi');
+    expect(bounceToHex).toMatch("hex = -1:5555555555555555555555555555555555555555555555555555555555555555");
+    expect(bounceToHex).toMatch("✓ main = Uf9VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVeGi");
+    expect(bounceToHex).toMatch("✓ main url = Uf9VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVeGi");
+
+    const bounceToHexWithSlash = await cmd('addr', 'EQA9uzKPV4JLKXPoQM2ddKOAfo99hcO_NCBsHG-1Q-QE2ah8');
+    expect(bounceToHexWithSlash).toMatch("main bounce = EQA9uzKPV4JLKXPoQM2ddKOAfo99hcO/NCBsHG+1Q+QE2ah8");
+    expect(bounceToHexWithSlash).toMatch("✓ main bounce url = EQA9uzKPV4JLKXPoQM2ddKOAfo99hcO_NCBsHG-1Q-QE2ah8");
+
+
+    const otherWorkchainId = await cmd('a', '0:0000000000000000000000000000000000000000000000000000000000000000');
+    expect(otherWorkchainId).toMatch("✓ hex = 0:0000000000000000000000000000000000000000000000000000000000000000");
+
+    const minWorkchainId = await cmd('a', '-128:0000000000000000000000000000000000000000000000000000000000000000');
+    expect(minWorkchainId).toMatch("✓ hex = -128:0000000000000000000000000000000000000000000000000000000000000000");
+
+    const maxWorkchainId = await cmd('a', '127:0000000000000000000000000000000000000000000000000000000000000000');
+    expect(maxWorkchainId).toMatch("✓ hex = 127:0000000000000000000000000000000000000000000000000000000000000000");
+
+    await expectError(2004, 'client', 'Invalid address [Non-std address]: 128:0000000000000000000000000000000000000000000000000000000000000000', async () => {
+        await cmd('a', '128:0000000000000000000000000000000000000000000000000000000000000000');
+    });
+
+    await expectError(2004, 'client', 'Invalid address [Non-std address]: -129:0000000000000000000000000000000000000000000000000000000000000000', async () => {
+        await cmd('a', '-129:0000000000000000000000000000000000000000000000000000000000000000');
+    });
+
+    await expectError(2004, 'client', 'Invalid address [fatal error]:', async () => {
+        await cmd('a', 'wrong');
+    });
+
+    await expectError(2004, 'client', 'Invalid address [Invalid argument: account address should be 256 bits long in workchain 0]', async () => {
+        await cmd('a', '00000000000000000000000');
+    });
+
+    await expectError(2004, 'client', 'Invalid address [Invalid argument: workchain_id is not correct number: invalid digit found in string]', async () => {
+        await cmd('a', 'ff:0000000000000000000000000000000000000000000000000000000000000000');
+    });
+});
