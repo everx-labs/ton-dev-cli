@@ -1,21 +1,15 @@
 # ton-dev-cli
 
 TON Labs Dev Command Line Tool
-<br/>
-<br/>
 
 See [https://docs.ton.dev](https://docs.ton.dev) for documentation.  
 Also check our [Youtube channel](https://www.youtube.com/channel/UC9kJ6DKaxSxk6T3lEGdq-Gg) for tutorials.
 
 ---
-
-<br/>
-
 ## Dependencies
 - `Node.js` >= 10.x installed
 
 - `Docker`  >= 19.x installed
-<br/>
 
 ## Install
 
@@ -121,7 +115,7 @@ tondev sol [options] [files...]
 
 The following options are available:
 
-- `-l`, `--client-languages <languages>` to generate client code for languages: "js", "rs" (use comma to separate several languages)
+- `-l`, `--client-languages <languages>` to generate client code for languages: "js" (use comma to separate several languages)
 - `-L`, `--client-level <client-level>` client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of a binary contract)
 
 ## Switching compiler versions
@@ -166,7 +160,7 @@ Generate random Key Pair
 ---
 
 
-## Complete help for version: 0.17.0
+## Complete help for version: 0.17.5
 
 #### `tondev -help`
 
@@ -176,28 +170,28 @@ Usage: tondev [options] [command]
 TON Labs development tools
 
 Options:
-  -V, --version                  output the version number
-  -a, --available                show available versions
-  -h, --help                     output usage information
+  -V, --version               output the version number
+  -a, --available             Show available versions.
+  -h, --help                  display help for command
 
 Commands:
-  info [options]                 Show summary about dev environment
-  sol [options] [files...]       Build solidity contract[s]
-  gen [options] [files...]       Generate client code for contract[s]
-  start [options]                Start dev containers
-  stop [options]                 Stop dev containers
-  restart [options]              Restart dev containers
-  recreate [options]             Recreate dev containers
-  setup [options]                Setup dev environment
-  clean [options]                Remove docker containers and images related 
-                                 to TON Dev
-  use [options] <version>        Use specified version for containers
-  set [options] [network...]     Set network[s] options
-  add [network...]               Add network[s]
-  remove|rm [network...]         Remove network[s]
-  test|t [options] [servers...]  Test network[s]
-  keys|k                         Generate random Key Pair
-  addr|a <addr>                  Convert address
+  info [options]              Show summary about dev environment.
+  sol [options] [files...]    Build solidity contract[s].
+  gen [options] [files...]    Generate client code for contract[s].
+  start [options]             Start dev containers.
+  stop [options]              Stop dev containers.
+  restart [options]           Restart dev containers.
+  recreate [options]          Recreate dev containers.
+  setup [options]             Setup dev environment.
+  clean [options]             Remove docker containers and images related to
+                              TON Dev.
+  use [options] <version>     Use specified version for containers.
+  set [options] [network...]  Set network[s] options.
+  add [network...]            Add network[s].
+  remove|rm [network...]      Remove network[s].
+  keys|k                      Generate random Key Pair.
+  addr|a <addr>               Convert address.
+  help [command]              display help for command
 ```
 
 ### _subcommands help:_
@@ -207,11 +201,11 @@ Commands:
 ```
 Usage: tondev info [options]
 
-Show summary about dev environment
+Show summary about dev environment.
 
 Options:
-  -a, --available  show available versions
-  -h, --help       output usage information
+  -a, --available  Show available versions.
+  -h, --help       display help for command
 ```
 
 #### `tondev sol --help`
@@ -219,26 +213,25 @@ Options:
 ```
 Usage: tondev sol [options] [files...]
 
-Build solidity contract[s]
+Build solidity contract[s].
 
 Options:
-  -l, --client-languages <languages>  generate client code for languages: "js", 
-                                      "rs" (multiple languages must be 
-                                      separated with comma)
-  -L, --client-level <client-level>   client code level: "run" to run only, 
-                                      "deploy" to run and deploy (includes an 
-                                      imageBase64 of binary contract) (default: 
+  -l, --client-languages <languages>  Generate client code for specified
+                                      languages separated by comma, supported
+                                      languages: "js".
+  -L, --client-level <client-level>   Client code level: "run" to run only,
+                                      "deploy" to run and deploy (includes an
+                                      imageBase64 of binary contract) (default:
                                       "deploy")
-  --js-module <module-type>           Java Script module type: `node` to use 
-                                      with `const FooContract = 
-                                      require('foo`)`, `nodeNoDefault` to use 
-                                      with `const {FooContract} = 
-                                      require('foo`)`, `es` to use with `import 
-                                      FooContract from 'foo'`, `esNoDefault` to 
-                                      use with `import {FooContract} from 
-                                      'foo'` (`node` is a default option) 
-                                      (default: "node")
-  -h, --help                          output usage information
+  --js-module <module-type>           Java Script module type: `node` to use
+                                      with `const FooContract =
+                                      require('foo')`, `nodeNoDefault` to use
+                                      with `const {FooContract} =
+                                      require('foo')`, `es` to use with `import
+                                      FooContract from 'foo'`, `esNoDefault` to
+                                      use with `import {FooContract} from
+                                      'foo'`. (default: "node")
+  -h, --help                          display help for command
 ```
 
 #### `tondev gen --help`
@@ -246,26 +239,25 @@ Options:
 ```
 Usage: tondev gen [options] [files...]
 
-Generate client code for contract[s]
+Generate client code for contract[s].
 
 Options:
-  -l, --client-languages <languages>  generate client code for languages: "js", 
-                                      "rs" (multiple languages must be 
-                                      separated with comma)
-  -L, --client-level <client-level>   client code level: "run" to run only, 
-                                      "deploy" to run and deploy (includes an 
-                                      imageBase64 of binary contract) (default: 
+  -l, --client-languages <languages>  Generate client code for specified
+                                      languages separated by comma, supported
+                                      languages: "js". (default: "js")
+  -L, --client-level <client-level>   Client code level: "run" to run only,
+                                      "deploy" to run and deploy (includes an
+                                      imageBase64 of binary contract) (default:
                                       "deploy")
-  --js-module <module-type>           Java Script module type: `node` to use 
-                                      with `const FooContract = 
-                                      require('foo`)`, `nodeNoDefault` to use 
-                                      with `const {FooContract} = 
-                                      require('foo`)`, `es` to use with `import 
-                                      FooContract from 'foo'`, `esNoDefault` to 
-                                      use with `import {FooContract} from 
-                                      'foo'` (`node` is a default option) 
-                                      (default: "node")
-  -h, --help                          output usage information
+  --js-module <module-type>           Java Script module type: `node` to use
+                                      with `const FooContract =
+                                      require('foo')`, `nodeNoDefault` to use
+                                      with `const {FooContract} =
+                                      require('foo')`, `es` to use with `import
+                                      FooContract from 'foo'`, `esNoDefault` to
+                                      use with `import {FooContract} from
+                                      'foo'`. (default: "node")
+  -h, --help                          display help for command
 ```
 
 #### `tondev start --help`
@@ -273,13 +265,13 @@ Options:
 ```
 Usage: tondev start [options]
 
-Start dev containers
+Start dev containers.
 
 Options:
-  -n, --networks [names]  apply command to specified network[s] (names must be 
-                          separated with comma)
-  -m, --compilers         apply command to the compilers container
-  -h, --help              output usage information
+  -n, --networks [names]  Apply command to specified network[s] (names must be
+                          separated with comma).
+  -m, --compilers         Apply command to the compilers container.
+  -h, --help              display help for command
 ```
 
 #### `tondev stop --help`
@@ -287,13 +279,13 @@ Options:
 ```
 Usage: tondev stop [options]
 
-Stop dev containers
+Stop dev containers.
 
 Options:
-  -n, --networks [names]  apply command to specified network[s] (names must be 
-                          separated with comma)
-  -m, --compilers         apply command to the compilers container
-  -h, --help              output usage information
+  -n, --networks [names]  Apply command to specified network[s] (names must be
+                          separated with comma).
+  -m, --compilers         Apply command to the compilers container.
+  -h, --help              display help for command
 ```
 
 #### `tondev restart --help`
@@ -301,13 +293,13 @@ Options:
 ```
 Usage: tondev restart [options]
 
-Restart dev containers
+Restart dev containers.
 
 Options:
-  -n, --networks [names]  apply command to specified network[s] (names must be 
-                          separated with comma)
-  -m, --compilers         apply command to the compilers container
-  -h, --help              output usage information
+  -n, --networks [names]  Apply command to specified network[s] (names must be
+                          separated with comma).
+  -m, --compilers         Apply command to the compilers container.
+  -h, --help              display help for command
 ```
 
 #### `tondev recreate --help`
@@ -315,13 +307,13 @@ Options:
 ```
 Usage: tondev recreate [options]
 
-Recreate dev containers
+Recreate dev containers.
 
 Options:
-  -n, --networks [names]  apply command to specified network[s] (names must be 
-                          separated with comma)
-  -m, --compilers         apply command to the compilers container
-  -h, --help              output usage information
+  -n, --networks [names]  Apply command to specified network[s] (names must be
+                          separated with comma).
+  -m, --compilers         Apply command to the compilers container.
+  -h, --help              display help for command
 ```
 
 #### `tondev setup --help`
@@ -329,13 +321,13 @@ Options:
 ```
 Usage: tondev setup [options]
 
-Setup dev environment
+Setup dev environment.
 
 Options:
-  -n, --networks [names]  apply command to specified network[s] (names must be 
-                          separated with comma)
-  -m, --compilers         apply command to the compilers container
-  -h, --help              output usage information
+  -n, --networks [names]  Apply command to specified network[s] (names must be
+                          separated with comma).
+  -m, --compilers         Apply command to the compilers container.
+  -h, --help              display help for command
 ```
 
 #### `tondev clean --help`
@@ -343,13 +335,13 @@ Options:
 ```
 Usage: tondev clean [options]
 
-Remove docker containers and images related to TON Dev
+Remove docker containers and images related to TON Dev.
 
 Options:
-  -n, --networks    clean local node docker containers and images
-  -m, --compilers   clean compilers docker containers and images
-  -c, --containers  clean containers only (default: false)
-  -h, --help        output usage information
+  -n, --networks    Clean local node docker containers and images.
+  -m, --compilers   Clean compilers docker containers and images.
+  -c, --containers  Clean containers only. (default: false)
+  -h, --help        display help for command
 ```
 
 #### `tondev use --help`
@@ -357,13 +349,13 @@ Options:
 ```
 Usage: tondev use [options] <version>
 
-Use specified version for containers
+Use specified version for containers.
 
 Options:
-  -n, --networks [names]  apply command to specified network[s] (names must be 
-                          separated with comma)
-  -m, --compilers         apply command to the compilers container
-  -h, --help              output usage information
+  -n, --networks [names]  Apply command to specified network[s] (names must be
+                          separated with comma).
+  -m, --compilers         Apply command to the compilers container.
+  -h, --help              display help for command
 ```
 
 #### `tondev set --help`
@@ -371,15 +363,15 @@ Options:
 ```
 Usage: tondev set [options] [network...]
 
-Set network[s] options
+Set network[s] options.
 
 Options:
-  -p, --port <port>        host port to bound local node
-  -d, --db-port <binding>  host port to bound local nodes Arango DB ("bind" to 
-                           use default Arango DB port, "unbind" to unbind 
-                           Arango DB port)
-  -n, --new-name <name>    set new name for network
-  -h, --help               output usage information
+  -p, --port <port>        Host port to bound local node.
+  -d, --db-port <binding>  Host port to bound local nodes Arango DB ("bind" to
+                           use default Arango DB port, "unbind" to unbind
+                           Arango DB port).
+  -n, --new-name <name>    Set new name for network.
+  -h, --help               display help for command
 ```
 
 #### `tondev add --help`
@@ -387,10 +379,10 @@ Options:
 ```
 Usage: tondev add [options] [network...]
 
-Add network[s]
+Add network[s].
 
 Options:
-  -h, --help  output usage information
+  -h, --help  display help for command
 ```
 
 #### `tondev remove --help`
@@ -398,22 +390,10 @@ Options:
 ```
 Usage: tondev remove|rm [options] [network...]
 
-Remove network[s]
+Remove network[s].
 
 Options:
-  -h, --help  output usage information
-```
-
-#### `tondev test --help`
-
-```
-Usage: tondev test|t [options] [servers...]
-
-Test network[s]
-
-Options:
-  -v, --verbose  show verbose test log (default: false)
-  -h, --help     output usage information
+  -h, --help  display help for command
 ```
 
 #### `tondev keys --help`
@@ -421,10 +401,10 @@ Options:
 ```
 Usage: tondev keys|k [options]
 
-Generate random Key Pair
+Generate random Key Pair.
 
 Options:
-  -h, --help  output usage information
+  -h, --help  display help for command
 ```
 
 #### `tondev addr --help`
@@ -432,10 +412,42 @@ Options:
 ```
 Usage: tondev addr|a [options] <addr>
 
-Convert address
+Convert address.
 
 Options:
-  -h, --help  output usage information
+  -h, --help  display help for command
+```
+
+#### `tondev help --help`
+
+```
+Usage: tondev [options] [command]
+
+TON Labs development tools
+
+Options:
+  -V, --version               output the version number
+  -a, --available             Show available versions.
+  -h, --help                  display help for command
+
+Commands:
+  info [options]              Show summary about dev environment.
+  sol [options] [files...]    Build solidity contract[s].
+  gen [options] [files...]    Generate client code for contract[s].
+  start [options]             Start dev containers.
+  stop [options]              Stop dev containers.
+  restart [options]           Restart dev containers.
+  recreate [options]          Recreate dev containers.
+  setup [options]             Setup dev environment.
+  clean [options]             Remove docker containers and images related to
+                              TON Dev.
+  use [options] <version>     Use specified version for containers.
+  set [options] [network...]  Set network[s] options.
+  add [network...]            Add network[s].
+  remove|rm [network...]      Remove network[s].
+  keys|k                      Generate random Key Pair.
+  addr|a <addr>               Convert address.
+  help [command]              display help for command
 ```
 
 ---
