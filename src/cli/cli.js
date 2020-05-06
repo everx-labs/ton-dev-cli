@@ -21,7 +21,6 @@ import { Dev } from "../dev";
 import { Network } from "../networks/networks";
 import type { NetworkConfig } from "../networks/networks";
 import { web } from "../server/server";
-import { CheckNetwork } from "./check";
 import { compilersWithNetworks } from "./options";
 import type {
     CleanOptions,
@@ -35,7 +34,6 @@ import type {
 
 import { infoCommand } from "./info.js";
 import { spy } from "./spy";
-import { NetworkTracer } from "./trace";
 
 const USE_EXPERIMENTAL_FEATURES = false;
 
@@ -108,10 +106,6 @@ async function generateKeysCommand(_dev: Dev) {
     console.log(JSON.stringify(keys, undefined, 4));
 }
 
-async function testCommand(_dev: Dev, servers: string[], options: { verbose: boolean }) {
-    await CheckNetwork.checkNetworks(servers, options.verbose);
-}
-
 async function convertAddress(_dev: Dev, addr) {
     const client = await TONClient.create({
         servers: ['http://localhost'],
@@ -154,10 +148,6 @@ async function convertAddress(_dev: Dev, addr) {
     await showBase64(true, false, true);
     await showBase64(true, true, false);
     await showBase64(true, true, true);
-}
-
-async function traceCommand(_dev: Dev, server: string) {
-    await NetworkTracer.traceNetwork(server);
 }
 
 async function useCommand(dev: Dev, version: string, options: UseOptions) {
@@ -331,17 +321,13 @@ async function handleCommandLine(dev: Dev, args: string[]) {
         .action(command(removeCommand));
 
     program
-        .command('test [servers...]').alias('t').description('Test network[s].')
-        .option('-v, --verbose', 'Show verbose test log.', false)
-        .action(command(testCommand));
-
-    program
         .command('keys').alias('k').description('Generate random Key Pair.')
         .action(command(generateKeysCommand));
 
     program
         .command('addr <addr>').alias('a').description('Convert address.')
-        .action(command(convertAddress));
+        .action(command(convertAddress))
+        .allowUnknownOption(true);
 
     if (USE_EXPERIMENTAL_FEATURES) {
         program
@@ -353,9 +339,6 @@ async function handleCommandLine(dev: Dev, args: string[]) {
             .option('-p, --port <port>', 'Host port to bound web console.', '8800')
             .action(command(webConsoleCommand));
 
-        program
-            .command('trace <server>').description('Trace message.')
-            .action(command(traceCommand));
 
     }
 
