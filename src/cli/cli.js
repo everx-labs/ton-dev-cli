@@ -34,11 +34,9 @@ import type {
 
 import { infoCommand } from "./info.js";
 import { spy } from "./spy";
+import { Command } from 'commander';
 
 const USE_EXPERIMENTAL_FEATURES = false;
-
-const program = require('commander');
-
 
 async function setupCommand(dev: Dev, options: SetupOptions) {
     await dev.start(compilersWithNetworks(dev, options));
@@ -224,6 +222,8 @@ const jsModuleTypeOption = [
 
 
 async function handleCommandLine(dev: Dev, args: string[]) {
+    const program = new Command();
+
     let commandAction = infoCommand;
     let commandArgs = [];
 
