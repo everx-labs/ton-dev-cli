@@ -1,21 +1,15 @@
 # ton-dev-cli
 
 TON Labs Dev Command Line Tool
-<br/>
-<br/>
 
 See [https://docs.ton.dev](https://docs.ton.dev) for documentation.  
 Also check our [Youtube channel](https://www.youtube.com/channel/UC9kJ6DKaxSxk6T3lEGdq-Gg) for tutorials.
 
 ---
-
-<br/>
-
 ## Dependencies
 - `Node.js` >= 10.x installed
 
 - `Docker`  >= 19.x installed
-<br/>
 
 ## Install
 
@@ -121,7 +115,7 @@ tondev sol [options] [files...]
 
 The following options are available:
 
-- `-l`, `--client-languages <languages>` to generate client code for languages: "js", "rs" (use comma to separate several languages)
+- `-l`, `--client-languages <languages>` to generate client code for languages: "js" (use comma to separate several languages)
 - `-L`, `--client-level <client-level>` client code level: "run" to run only, "deploy" to run and deploy (includes an imageBase64 of a binary contract)
 
 ## Switching compiler versions
