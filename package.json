@@ -32,37 +32,37 @@
 		}
 	},
 	"dependencies": {
-		"@babel/runtime": "^7.7.4",
-		"cli-progress": "^3.4.0",
+		"@babel/runtime": "^7.9.6",
+		"cli-progress": "^3.8.2",
 		"colors": "^1.4.0",
-		"commander": "^4.0.1",
+		"commander": "^5.1.0",
 		"cors": "^2.8.5",
 		"dockerode": "^3.0.2",
 		"express": "^4.17.1",
 		"handlebars": "^4.5.3",
-		"ton-client-js": "^0.21.0",
-		"ton-client-node-js": "^0.21.0"
+		"ton-client-js": "^0.22.0",
+		"ton-client-node-js": "^0.22.0"
 	},
 	"devDependencies": {
 		"@babel/cli": "^7.8.4",
-		"@babel/core": "^7.8.4",
+		"@babel/core": "^7.9.6",
 		"@babel/plugin-proposal-class-properties": "^7.8.3",
 		"@babel/plugin-proposal-decorators": "^7.8.3",
 		"@babel/plugin-proposal-export-default-from": "^7.8.3",
 		"@babel/plugin-proposal-export-namespace-from": "^7.8.3",
 		"@babel/plugin-proposal-nullish-coalescing-operator": "^7.8.3",
 		"@babel/plugin-proposal-numeric-separator": "^7.8.3",
-		"@babel/plugin-proposal-optional-chaining": "^7.8.3",
+		"@babel/plugin-proposal-optional-chaining": "^7.9.0",
 		"@babel/plugin-syntax-bigint": "^7.8.3",
 		"@babel/plugin-syntax-dynamic-import": "^7.8.3",
-		"@babel/plugin-transform-modules-commonjs": "^7.8.3",
+		"@babel/plugin-transform-modules-commonjs": "^7.9.6",
 		"@babel/preset-flow": "^7.8.3",
 		"babel-eslint": "^10.0.3",
 		"eslint": "^6.7.2",
 		"eslint-plugin-import": "^2.18.2",
 		"eslint-plugin-jsx-a11y": "^6.2.3",
 		"flow": "^0.2.3",
-		"jest": "^24.9.0",
-		"husky": "^4.2.3"
+		"husky": "^4.2.5",
+		"jest": "^26.0.1"
 	}
 }
