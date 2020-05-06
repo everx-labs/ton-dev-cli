@@ -32,6 +32,13 @@ async function cmd(...args) {
 }
 
 test('Masterchain addr', async () => {
-    await cmd('a', '-1:0b0cb5e0bc0bc0baa3ea45a37d14dee1b1a24befa40c7be54aeaf8fcc7438b5c');
+    // await cmd('a', '-1:0b0cb5e0bc0bc0baa3ea45a37d14dee1b1a24befa40c7be54aeaf8fcc7438b5c');
+
+    const hexToAddresses = await cmd('a', '-1:5555555555555555555555555555555555555555555555555555555555555555');
+    const bounceToHex = await cmd('a', 'Uf9VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVeGi');
+    console.log('>>>', {
+        hexToAddresses,
+        bounceToHex
+    });
 });
 
