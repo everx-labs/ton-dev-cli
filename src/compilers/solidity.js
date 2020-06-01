@@ -82,19 +82,26 @@ export class Solidity {
         }
     }
 
-    prepareBuildBatchForFie(file: SolidityFileArg, batch: string[]) {
+    prepareBuildBatchForFile(file: SolidityFileArg, batch: string[]) {
         const { name } = file;
-        batch.push(
-            `solc ${name.sol} --tvm > ${name.code}`,
-            `solc ${name.sol} --tvm_abi > ${name.abi} || solc ${name.sol} --tvm-abi > ${name.abi}`,
-            `tvm_linker compile ${name.code} --lib /usr/bin/stdlib_sol.tvm --abi-json ${name.abi} > ${name.result}`
-        );
+        if (this.dev.compilers.getConfig().version === 'latest') {
+            batch.push(
+                `solc ${name.sol}`,
+                `tvm_linker compile ${name.code} --lib /usr/bin/stdlib_sol.tvm --abi-json ${name.abi} > ${name.result}`
+            );
+        } else {
+            batch.push(
+                `solc ${name.sol} --tvm > ${name.code}`,
+                `solc ${name.sol} --tvm_abi > ${name.abi} || solc ${name.sol} --tvm-abi > ${name.abi}`,
+                `tvm_linker compile ${name.code} --lib /usr/bin/stdlib_sol.tvm --abi-json ${name.abi} > ${name.result}`
+            );
+        }
     }
 
     prepareBuildBatch(file: SolidityFileArg, job: CompilersJob) {
         const batch = [];
         batch.push(`cd ${job.guestPath()}`);
-        this.prepareBuildBatchForFie(file, batch);
+        this.prepareBuildBatchForFile(file, batch);
         fs.writeFileSync(job.hostPath('job.sh'), batch.join('\n'));
     }
 
