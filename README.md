@@ -17,11 +17,7 @@ Also check our [Youtube channel](https://www.youtube.com/channel/UC9kJ6DKaxSxk6T
 npm install -g ton-dev-cli
 ```
 
-or
-
-```shell
-sudo npm install -g ton-dev-cli
-```
+[See installation guide in case of problems](https://docs.ton.dev/86757ecb2/p/048b10-installation)
 
 # Basic operations
 
