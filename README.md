@@ -1,5 +1,7 @@
 # ton-dev-cli
 
+> ⚠️ ton-dev-cli is deprecated. Please use [tondev](https://github.com/tonlabs/tondev) package instead.
+
 TON Labs Dev Command Line Tool
 
 See [https://docs.ton.dev](https://docs.ton.dev) for documentation.  
